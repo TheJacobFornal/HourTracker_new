@@ -1,0 +1,34 @@
+/* Project_Header.css */
+.ProjectHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between; /* push children to edges */
+  gap: 24px;
+  margin-bottom: 24px; /* replaces Tailwind mb-6 */
+  width: 1400px;
+}
+
+.Header_Left_Div {
+  text-align: left;
+}
+
+/* keep the right side pinned to the far right of the row */
+.Header_Right_Div {
+  margin-left: auto; /* pushes this block to the right edge */
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* OPTIONAL: make the header span the full viewport width (flush to page edges) */
+/*
+  .ProjectHeader--fullbleed {
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  */

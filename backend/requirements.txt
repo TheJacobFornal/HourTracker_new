@@ -1,0 +1,13 @@
+certifi==2025.8.3
+cffi==1.17.1
+cryptography==45.0.6
+pycparser==2.22
+wheel==0.45.1
+
+Flask
+Flask-Cors
+SQLAlchemy
+Flask-SQLAlchemy
+alembic
+
+pyodbc
