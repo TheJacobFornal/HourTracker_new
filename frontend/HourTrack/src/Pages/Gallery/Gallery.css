@@ -1,11 +1,52 @@
 .HeaderDiv {
   padding-bottom: 30px;
+  width: 100%;
+  margin-left: 0;
+  padding-left: 0;
+  padding-right: 0;
+  max-width: 1150px;
+  margin-right: auto;
+  margin-left: auto;
 }
 
 .FilterDiv {
   padding-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .GridDiv {
   padding-bottom: 20px;
 }
+
+.main_box {
+  padding-top: 20px;
+  width: 100%;  
+
+}
+
+.modern-input {
+  width: 120px;
+  padding: 7px 10px;
+  border: 1.5px solid #e5e5ea;
+  border-radius: 8px;
+  background: #f9f9fb;
+  font-size: 17px;
+  color: #222;
+  font-weight: 500;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 4px 0 rgba(0,0,0,0.04);
+}
+
+.modern-input:focus {
+  border-color: #007aff;
+  box-shadow: 0 2px 8px 0 rgba(0,122,255,0.10);
+  background: #fff;
+}
+
+
+

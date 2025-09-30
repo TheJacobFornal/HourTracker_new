@@ -53,7 +53,9 @@ export default function ProjectHeader() {
     <header className="ProjectHeader">
       {/* add ProjectHeader--fullbleed if you want full page width */}
       <div className="Header_Left_Div">
-        <h1 className="text-3xl font-bold mb-2">Project: {projectId}</h1>
+        <h1 style={{ fontSize: "45px" }} className="font-bold mb-2">
+          {projectId}
+        </h1>
       </div>
 
       <div className="Header_Right_Div">
@@ -66,7 +68,7 @@ export default function ProjectHeader() {
             <span className="text-gray-500">Brak zakresu dat</span>
           )}
         </p>
-        <p>Project Leader: {loading ? "…" : leader ?? "—"}</p>
+        <p>Leader: {loading ? "…" : leader ?? "—"}</p>
         <p>Status: {loading ? "…" : status ?? "—"}</p>
         {err && (
           <p className="text-red-600 text-sm">

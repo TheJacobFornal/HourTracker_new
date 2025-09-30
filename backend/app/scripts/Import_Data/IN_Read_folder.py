@@ -3,7 +3,7 @@ import os
 from app.scripts.Import_Data import IN_Read_Excel
 
 
-def main(Main_dir=Path(r"/Users/jacob/Downloads/2024")):
+def main(Main_dir=Path(r"C:\Users\JakubFornal\Desktop\Wymiana Kopia\karty pracy\2022")):
 
     year = Main_dir.name
     year = int(year.strip())

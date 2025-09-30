@@ -13,11 +13,21 @@ export default function GalleryFilters({ filters, setFilters }) {
     setFilters((f) => (f.leader === v ? f : { ...f, leader: v }));
 
   const setDateRange = ({ from, to }) =>
-    setFilters((f) =>
-      f.date_from === from && f.date_to === to
+    setFilters((f) => {
+      const next = {
+        ...f,
+        date_from: from !== undefined ? from : f.date_from,
+        date_to: to !== undefined ? to : f.date_to,
+      };
+
+      // prevent re-render if nothing actually changed
+      return next.date_from === f.date_from && next.date_to === f.date_to
         ? f
-        : { ...f, date_from: from, date_to: to }
-    );
+        : next;
+    });
+
+  const setDateSort = (v) =>
+    setFilters((f) => (f.date_sort === v ? f : { ...f, date_sort: v }));
 
   const setSearch = (v) =>
     setFilters((f) => (f.search === v ? f : { ...f, search: v }));
@@ -28,8 +38,11 @@ export default function GalleryFilters({ filters, setFilters }) {
       <Leader value={filters.leader} onChange={setLeader} />
       <DateRange
         value={{ from: filters.date_from, to: filters.date_to }}
+        sortOrder={filters.date_sort}
         onChange={setDateRange}
+        onSortChange={setDateSort}
       />
+
       <Search
         value={filters.search}
         onChange={setSearch}

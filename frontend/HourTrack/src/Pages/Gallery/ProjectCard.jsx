@@ -2,6 +2,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import "./Gallery.css";
+import calendarIcon from "../../assets/calendar.png";
+import leaderIcon from "../../assets/leader.png";
 
 const asYMD = (v) => {
   if (!v) return "";
@@ -40,8 +42,40 @@ const ProjectCard = ({ id, hours, user, dateRange, filters }) => (
       </div>
       <hr />
       <div style={styles.body}>
-        <p style={{ fontWeight: 600, margin: "4px 0" }}>{user}</p>
-        <p style={{ color: "#655", fontSize: 15 }}>{dateRange}</p>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <img
+            src={calendarIcon}
+            alt="calendar"
+            style={{
+              width: 22,
+              height: 22,
+              marginRight: 6,
+            }}
+          />
+          <p
+            style={{
+              fontWeight: 600,
+              margin: 0,
+            }}
+          >
+            {dateRange}
+          </p>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            margin: "4px 0",
+          }}
+        >
+          <img
+            src={leaderIcon}
+            alt="leader"
+            style={{ width: 22, height: 22, marginRight: 3 }}
+          />
+          <p style={{ fontWeight: 600, margin: 0 }}>{user}</p>
+        </div>
       </div>
     </div>
   </Link>
@@ -49,11 +83,22 @@ const ProjectCard = ({ id, hours, user, dateRange, filters }) => (
 
 const styles = {
   card: {
-    border: "1.5px solid #ccc",
-    borderRadius: 8,
-    padding: 15,
+    border: "1.5px solid #afafafff",
+    borderRadius: 16,
+    padding: 14,
     width: 350,
+    Height: 100,
     boxSizing: "border-box",
+    background: "#f9f9fb",
+    boxShadow: "0 4px 16px 0 rgba(45, 45, 45, 0.13)",
+    transition:
+      "box-shadow 0.18s, border-color 0.18s, transform 0.18s, background 0.18s",
+    margin: "3px 0",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    gap: 3,
+    cursor: "pointer",
   },
   header: { display: "flex", alignItems: "center", fontSize: 19 },
   icon: { color: "orange", marginRight: 8 },

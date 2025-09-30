@@ -3,10 +3,10 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 import urllib.parse as _u
 
-SERVER = r"localhost"
-DATABASE = "HourTrackerDB"
-USER = "sa"
-PWD = "YourStrong!Passw0rd"  # escape backslash for Python
+SERVER = r"10.1.69.13\EPLAN"
+DATABASE = "worksheets"
+USER = "ws"
+PWD = "64>z*9zK@e$2H4CXX@W2\h.n&j(0b~yh"  # escape backslash for Python
 
 _odbc = _u.quote_plus(
     f"DRIVER=ODBC Driver 17 for SQL Server;"

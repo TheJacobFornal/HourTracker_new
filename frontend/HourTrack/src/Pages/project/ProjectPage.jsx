@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import ProjectHeader from "./Project_Header";
-import ProjectFiltr from "./Project_Filter";
+import ProjectFiltr from "./Project_Filters";
 import ActivitiesList from "./ActivitiesList";
 const API_URL = "http://127.0.0.1:5000/api/project/activities_details";
 
@@ -24,6 +24,8 @@ export default function ProjectPage() {
     next.delete("date_to");
     setSp(next, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    console.log("loaded data: ", dates);
   }, []);
 
   const [activities, setActivities] = useState([]);
@@ -69,14 +71,14 @@ export default function ProjectPage() {
   }, [activities]);
 
   return (
-    <div className="max-w-[900px] mx-auto p-5">
+    <div className="Project_main">
       <ProjectHeader
         projectId={projectId}
         dateFrom={dates.from}
         dateTo={dates.to}
       />
 
-      <ProjectFiltr value={dates} onChange={setDates} />
+      <ProjectFiltr filters={dates} setFilters={setDates} />
 
       {!loading && !err && <ActivitiesList data={activities} />}
     </div>

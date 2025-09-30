@@ -1,5 +1,5 @@
 // Gallery.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import GalleryHeader from "./Gallery_Header";
 import GalleryFilters from "./Gallery_Fileters";
 import GalleryGrid from "./Gallery_Grid";
@@ -18,18 +18,51 @@ function useDebounced(value, delay = 300) {
 
 export default function Gallery() {
   const [projectList, setProjectList] = useState([]);
+  const [result_count, setResultCount] = useState(0);
   const [filters, setFilters] = useState({
     users: [],
     status: "ALL",
     leader: "ALL",
     date_from: null,
     date_to: null,
+    date_sort: "begin",
     search: "",
+    page: 1, // add page
+    page_size: 51, // add page_size
   });
+  const [loading, setLoading] = useState(true); // set initial loading to true
+  const isFirstRender = useRef(true);
+
+  // Reset page to 1 when filters (except page/page_size) change, but skip on first render
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    setFilters((f) => ({ ...f, page: 1 }));
+    // eslint-disable-next-line
+  }, [
+    filters.status,
+    filters.leader,
+    filters.date_from,
+    filters.date_to,
+    filters.date_sort,
+    filters.search,
+  ]);
+
+  useEffect(() => {
+    if (filters.date_from || filters.date_to) {
+      console.log("Date range changed:", {
+        from: filters.date_from,
+        to: filters.date_to,
+      });
+    }
+  }, [filters.date_from, filters.date_to]);
 
   const debouncedFilters = useDebounced(filters, 300);
 
   useEffect(() => {
+    setLoading(true);
     const ac = new AbortController();
     (async () => {
       try {
@@ -41,18 +74,27 @@ export default function Gallery() {
         });
         if (!res.ok) return;
         const data = await res.json();
-        setProjectList(data);
+        setProjectList(data.projects); // list of projects
+        setResultCount(data.record_counter); // total matching rows
+        window.scrollTo({ top: 0, behavior: "smooth" }); // scroll to top after loading
       } catch (e) {
         if (e.name !== "AbortError") console.error("API error:", e);
+      } finally {
+        setLoading(false);
       }
     })();
     return () => ac.abort();
   }, [debouncedFilters]);
 
+  // Pagination handler
+  const handlePageChange = (newPage) => {
+    setFilters((f) => ({ ...f, page: newPage }));
+  };
+
   return (
-    <div className="max-w-[1900px] w-full mx-auto px-5">
+    <div className="main_box">
       <div className="HeaderDiv">
-        <GalleryHeader />
+        <GalleryHeader result_count={result_count} />
       </div>
 
       <div className="FilterDiv">
@@ -60,7 +102,46 @@ export default function Gallery() {
       </div>
 
       <div className="GridDiv">
-        <GalleryGrid projects={projectList} filters={filters} />
+        {loading ? (
+          <div
+            className="flex items-center justify-center"
+            style={{ minHeight: "300px" }}
+          >
+            <span
+              style={{
+                fontSize: "2.5rem",
+                color: "#888",
+                fontWeight: 700,
+                letterSpacing: "1px",
+              }}
+            >
+              Loading projects...
+            </span>
+          </div>
+        ) : projectList.length === 0 ? (
+          <div
+            className="flex items-center justify-center"
+            style={{ minHeight: "300px" }}
+          >
+            <span
+              style={{
+                fontSize: "2.5rem",
+                color: "#888",
+                fontWeight: 700,
+                letterSpacing: "1px",
+              }}
+            >
+              brak projektów
+            </span>
+          </div>
+        ) : (
+          <GalleryGrid
+            projects={projectList}
+            filters={filters}
+            totalCount={result_count}
+            onPageChange={handlePageChange}
+          />
+        )}
       </div>
     </div>
   );

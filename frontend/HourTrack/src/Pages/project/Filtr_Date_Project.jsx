@@ -4,7 +4,6 @@ export default function DateRange({ value, onChange, onSortChange }) {
   const [from, setFrom] = useState(value?.from ?? "");
   const [to, setTo] = useState(value?.to ?? "");
   const [error, setError] = useState("");
-  const [sortOrder, setSortOrder] = useState("begin"); // new state for sort
   const isFirst = useRef(true);
 
   useEffect(() => {
@@ -88,15 +87,6 @@ export default function DateRange({ value, onChange, onSortChange }) {
             placeholder="YYYY-MM-DD"
             className="modern-input w-[130px] text-[16px] bg-white border border-gray-300 rounded-low shadow-sm hover:bg-gray-50 focus:outline-none px-2 py-2"
           />
-
-          <select
-            value={sortOrder}
-            onChange={handleSortChange}
-            className="modern-input text-[16px] border border-gray-300 rounded-low px-2 py-1 bg-white shadow-sm hover:bg-gray-50"
-          >
-            <option value="begin">Początek</option>
-            <option value="end">Koniec</option>
-          </select>
         </div>
       </div>
 

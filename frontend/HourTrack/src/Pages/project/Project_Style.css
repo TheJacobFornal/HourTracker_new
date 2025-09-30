@@ -5,7 +5,7 @@
   justify-content: space-between; /* push children to edges */
   gap: 24px;
   margin-bottom: 24px; /* replaces Tailwind mb-6 */
-  width: 1400px;
+  width: 1150px;
 }
 
 .Header_Left_Div {
@@ -14,9 +14,19 @@
 
 /* keep the right side pinned to the far right of the row */
 .Header_Right_Div {
-  margin-left: auto; /* pushes this block to the right edge */
-  text-align: right;
-  flex-shrink: 0;
+  margin-left: auto; 
+  text-align: left;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.filters-container {
+  width: 1150px;
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: 20px;
+  padding-top: 10px;
+
 }
 
 /* OPTIONAL: make the header span the full viewport width (flush to page edges) */
@@ -32,3 +42,40 @@
     padding-right: 20px;
   }
   */
+
+.Project_main {
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: 50px; 
+  padding-bottom: 80px;
+}
+
+.activity-item {
+  border-radius: 16px;
+  border: 1.5px solid #e5e5ea;
+  font-size: 16px;
+  /* Add any other styles you want */
+}
+
+.activity-item button:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: inherit !important;
+}
+
+.user_List_acitivity{
+  padding: 0px 0px 10px 0px;
+  background: #f4f4f4;
+}
+
+.user_List_acitivity li{
+  padding: 2px 20px 2px 50px;
+}
+
+.user_List_acitivity li:hover {
+  background: #6bbaff14;
+}
+
