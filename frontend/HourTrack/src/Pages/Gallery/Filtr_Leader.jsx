@@ -1,6 +1,7 @@
 // Filtr_Leader.jsx
 import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
+import { API_ENDPOINTS } from "../../config/api";
 
 export default function LeaderDropdown({ value, onChange }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,7 +10,7 @@ export default function LeaderDropdown({ value, onChange }) {
   const ref = useRef(null);
 
   useEffect(() => {
-    axios.get("http://127.0.0.1:5000/get/leaders").then((res) => {
+    axios.get(API_ENDPOINTS.leaders).then((res) => {
       setLeaders(["ALL", ...(res.data || [])]);
     });
   }, []);

@@ -1,9 +1,10 @@
 // Project_Header.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
+import { API_ENDPOINTS } from "../../config/api";
 import "./Project_Style.css";
 
-const API_URL = "http://127.0.0.1:5000/api/project/header_info";
+const API_URL = API_ENDPOINTS.projectHeader;
 
 export default function ProjectHeader() {
   const { projectId } = useParams();

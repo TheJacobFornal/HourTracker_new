@@ -3,9 +3,20 @@ import React, { useEffect, useState, useRef } from "react";
 import GalleryHeader from "./Gallery_Header";
 import GalleryFilters from "./Gallery_Fileters";
 import GalleryGrid from "./Gallery_Grid";
+import { API_ENDPOINTS, API_BASE_URL } from "../../config/api";
 import "./Gallery.css";
 
-const API_URL = "http://127.0.0.1:5000/api/projects/search";
+const API_URL = API_ENDPOINTS.projectsSearch;
+const API_PORT = (() => {
+  try {
+    const url = new URL(API_BASE_URL);
+    if (url.port) return url.port;
+    return url.protocol === "https:" ? "443" : "80";
+  } catch (e) {
+    console.error("Failed to parse API base URL", e);
+    return "unknown";
+  }
+})();
 
 function useDebounced(value, delay = 300) {
   const [v, setV] = useState(value);
@@ -19,6 +30,7 @@ function useDebounced(value, delay = 300) {
 export default function Gallery() {
   const [projectList, setProjectList] = useState([]);
   const [result_count, setResultCount] = useState(0);
+  const [apiReady, setApiReady] = useState(null);
   const [filters, setFilters] = useState({
     users: [],
     status: "ALL",
@@ -63,6 +75,7 @@ export default function Gallery() {
 
   useEffect(() => {
     setLoading(true);
+    setApiReady(null);
     const ac = new AbortController();
     (async () => {
       try {
@@ -72,13 +85,19 @@ export default function Gallery() {
           body: JSON.stringify(debouncedFilters),
           signal: ac.signal,
         });
-        if (!res.ok) return;
+        if (!res.ok) {
+          setApiReady(false);
+          return;
+        }
         const data = await res.json();
         setProjectList(data.projects); // list of projects
         setResultCount(data.record_counter); // total matching rows
+        setApiReady(true);
         window.scrollTo({ top: 0, behavior: "smooth" }); // scroll to top after loading
       } catch (e) {
-        if (e.name !== "AbortError") console.error("API error:", e);
+        if (e.name === "AbortError") return;
+        console.error("API error:", e);
+        setApiReady(false);
       } finally {
         setLoading(false);
       }

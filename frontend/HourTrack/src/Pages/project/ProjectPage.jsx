@@ -3,8 +3,9 @@ import React, { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import ProjectHeader from "./Project_Header";
 import ProjectFiltr from "./Project_Filters";
+import { API_ENDPOINTS } from "../../config/api";
 import ActivitiesList from "./ActivitiesList";
-const API_URL = "http://127.0.0.1:5000/api/project/activities_details";
+const API_URL = API_ENDPOINTS.projectActivities;
 
 // Simple module-level store other modules can import & read
 export const activitiesStore = { last: null };
