@@ -1,28 +1,69 @@
-from flask import Flask, jsonify, request
-from flask_cors import CORS  # Import CORS to allow cross-origin requests
-from app.scripts.Export_Data import OUT_DB
-from app.scripts.Export_Data import OUT_Main
-from app.scripts.Export_Data import Projects_Search
+import uvicorn
+import os
+import sys
+
+# Ensure project root is on sys.path when running as a bundled executable or script
+_root_candidates = []
+if getattr(sys, "frozen", False):
+    _root_candidates.extend(
+        [
+            getattr(sys, "_MEIPASS", ""),
+            os.path.dirname(sys.executable),
+        ]
+    )
+else:
+    _root_candidates.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
+
+for candidate in _root_candidates:
+    if not candidate:
+        continue
+    backend_path = os.path.join(candidate, "backend")
+    if os.path.isdir(backend_path) and backend_path not in sys.path:
+        sys.path.insert(0, backend_path)
+
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
+from app.db.session import SessionLocal
+from app.models.project import Project
+from app.models.time_log import TimeLog
+from app.models.user import User
 from app.scripts.Export_Data import Activity_Search
-
-app = Flask(__name__)
-
-CORS(app)
+from app.scripts.Export_Data import Projects_Search
 
 
-@app.route("/api/projects/search", methods=["POST"])
-def search_project():
-    data = request.get_json()
+def get_db() -> Session:
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-    users = data.get("users", [])
-    status = data.get("status")
-    leader = data.get("leader")
-    date_from = data.get("date_from")
-    date_to = data.get("date_to")
-    date_order = data.get("date_sort")
-    search = data.get("search", "")
-    page = data.get("page", 1)
-    page_size = data.get("page_size", 51)
+
+app = FastAPI(title="HourTracker API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.post("/api/projects/search")
+def search_project(payload: dict):
+    users = payload.get("users", [])
+    status = payload.get("status")
+    leader = payload.get("leader")
+    date_from = payload.get("date_from")
+    date_to = payload.get("date_to")
+    date_order = payload.get("date_sort")
+    search = payload.get("search", "")
+    page = payload.get("page", 1)
+    page_size = payload.get("page_size", 51)
 
     print(
         "pro",
@@ -37,126 +78,111 @@ def search_project():
         page_size,
         flush=True,
     )
-    restult_new, record_counter = Projects_Search.get_projects_list(
+
+    projects, record_counter = Projects_Search.get_projects_list(
         users, status, leader, date_from, date_to, date_order, search, page, page_size
     )
 
-    return jsonify({"projects": restult_new, "record_counter": record_counter})
+    return {"projects": projects, "record_counter": record_counter}
 
 
-@app.route("/api/project/header_info", methods=["POST"])
-def header_info():
-    data = request.get_json()  # <-- this gets the JSON payload
+@app.post("/api/project/header_info")
+def header_info(payload: dict, db: Session = Depends(get_db)):
+    project_name = payload.get("project_name")
 
-    # Example: access values
-    project_name = data.get("project_name")
+    if not project_name:
+        raise HTTPException(status_code=400, detail="Missing project_name")
 
-    results = [
-        {
-            "leader": "Eryk Królikowskiii",
-            "dateFrom": "2025-05-22",
-            "dateTo": "2025-07-31",
-            "status": "In Progress",
-        }
-    ]
+    try:
+        row = (
+            db.query(
+                Project.name.label("project_name"),
+                Project.status.label("status"),
+                User.name.label("leader_name"),
+                User.surname.label("leader_surname"),
+                func.min(TimeLog.log_date).label("date_from"),
+                func.max(TimeLog.log_date).label("date_to"),
+                func.sum(TimeLog.hours).label("total_hours"),
+            )
+            .outerjoin(TimeLog, TimeLog.project_id == Project.id)
+            .outerjoin(User, User.id == Project.leader_id)
+            .filter(Project.name == project_name)
+            .group_by(Project.name, Project.status, User.name, User.surname)
+            .first()
+        )
+    except Exception as exc:
+        print(f"Error fetching header info for {project_name}: {exc}", flush=True)
+        raise HTTPException(
+            status_code=500, detail="Failed to fetch project header info"
+        ) from exc
 
-    return jsonify(results)
+    if not row:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    leader_parts = [part for part in [row.leader_name, row.leader_surname] if part]
+    leader = " ".join(leader_parts) if leader_parts else "Brak lidera"
+
+    return {
+        "project": row.project_name,
+        "leader": leader,
+        "status": row.status or "Nieznany",
+        "dateFrom": row.date_from.isoformat() if row.date_from else None,
+        "dateTo": row.date_to.isoformat() if row.date_to else None,
+        "totalHours": float(row.total_hours) if row.total_hours is not None else 0.0,
+    }
 
 
-@app.route("/api/project/activities_details", methods=["POST"])
-def activity_details():
-    data = request.get_json()
+@app.post("/api/project/activities_details")
+def activity_details(payload: dict):
+    project_name = payload.get("project_name")
+    date_from = payload.get("date_from")
+    date_to = payload.get("date_to")
 
-    project_name = data.get("project_name")
-    date_from = data.get("date_from")
-    date_to = data.get("date_to")
+    print("activity date from:", date_from)
 
     activity_list = Activity_Search.get_activity_list(project_name, date_from, date_to)
 
     print(project_name, date_from, date_to, flush=True)
 
-    results = [
-        {
-            "activity": "Programowanie",
-            "hours": 10,
-            "users": {
-                "Jakub Fornal": 10,
-                "Jam Kowalski": 20,
-                "Adrian Koks": 54,
-            },
-        },
-        {
-            "activity": "Testowanie",
-            "hours": 8,
-            "users": {
-                "Eryk Królikowski": 5,
-                "Jakub Fornal": 2,
-                "Jam Kowalski": 6,
-            },
-        },
-        {
-            "activity": "Projektowanie",
-            "hours": 12,
-            "users": {
-                "Anna Nowak": 7,
-                "Adrian Koks": 3,
-                "Jakub Fornal": 4,
-            },
-        },
-        {
-            "activity": "Analiza",
-            "hours": 6,
-            "users": {
-                "Eryk Królikowski": 2,
-                "Anna Nowak": 3,
-                "Jam Kowalski": 1,
-            },
-        },
-    ]
-
-    return jsonify(activity_list)
+    return activity_list
 
 
-# Define the /api/project route
-@app.route("/api/projects/test")
-def project():
-
-    # projects = OUT_Main.projects_details()
-    # print(project)
-    # Example project data
+@app.get("/api/projects/test")
+def project_test():
     example_project1 = {
         "id": "IX_215323",
         "hours": 5100,
-        "user": "Eryk Królikowski",
+        "user": "Eryk Kr�likowski",
         "dateRange": "2025-05-22 to 2025-07-31",
     }
 
     example_project2 = {
         "id": "IX_215323",
         "hours": 55,
-        "user": "Eryk Królikowski",
+        "user": "Eryk Kr�likowski",
         "dateRange": "2025-05-22 to 2025-07-31",
     }
 
-    return jsonify(example_project1, example_project2)  # Return the data as JSON
+    return [example_project1, example_project2]
 
 
-# Main route
-@app.route("/get/leaders")
-def index():
+@app.get("/get/leaders")
+def get_leaders():
     print("Received request for leaders", flush=True)
-
     leaders = ["Mariusz", "Rafal", "Zbyszek"]
+    return leaders
 
-    return jsonify(leaders)  # Return the data as JSON
 
-
-@app.route("/")
-def home():
-    print("Received request for home", flush=True)
-    return "Hello, Flask API is running!"
+@app.get("/")
+def home(request: Request):
+    url = request.url
+    host = url.hostname or "unknown"
+    scheme = url.scheme or "http"
+    port = url.port or (443 if scheme == "https" else 80)
+    message = f"Hello, FastAPI is running at {scheme}://{host}:{port}!"
+    print(f"Received request for home from {scheme}://{host}:{port}", flush=True)
+    return {"message": message}
 
 
 if __name__ == "__main__":
-    print("Starting Flask server...", flush=True)
-    app.run(debug=True)
+    uvicorn.run(app, host="127.0.0.1", port=8000)
