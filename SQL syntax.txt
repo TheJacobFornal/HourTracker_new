@@ -1,0 +1,121 @@
+/* Drop (safe re-run) */
+IF OBJECT_ID('dbo.user_roles','U') IS NOT NULL DROP TABLE dbo.user_roles;
+IF OBJECT_ID('dbo.roles','U')       IS NOT NULL DROP TABLE dbo.roles;
+IF OBJECT_ID('dbo.time_logs','U')   IS NOT NULL DROP TABLE dbo.time_logs;
+IF OBJECT_ID('dbo.activities','U')  IS NOT NULL DROP TABLE dbo.activities;
+IF OBJECT_ID('dbo.projects','U')    IS NOT NULL DROP TABLE dbo.projects;
+IF OBJECT_ID('dbo.users','U')       IS NOT NULL DROP TABLE dbo.users;
+IF OBJECT_ID('dbo.teams','U')       IS NOT NULL DROP TABLE dbo.teams;
+IF OBJECT_ID('dbo.clients','U')     IS NOT NULL DROP TABLE dbo.clients;
+
+
+/* Clients */
+CREATE TABLE dbo.clients (
+    id          INT IDENTITY(1,1) CONSTRAINT PK_clients PRIMARY KEY,
+    name        NVARCHAR(150)      NOT NULL CONSTRAINT UQ_clients_name UNIQUE,
+    created_at  DATETIME2(0)       NOT NULL CONSTRAINT DF_clients_created DEFAULT SYSUTCDATETIME()
+);
+
+/* Teams */
+CREATE TABLE dbo.teams (
+    id          INT IDENTITY(1,1) CONSTRAINT PK_teams PRIMARY KEY,
+    name        NVARCHAR(100)      NOT NULL,
+    description NVARCHAR(MAX)      NULL,
+    created_at  DATETIME2(0)       NOT NULL CONSTRAINT DF_teams_created DEFAULT SYSUTCDATETIME()
+);
+CREATE INDEX IX_teams_name ON dbo.teams(name);
+
+/* Roles */
+CREATE TABLE dbo.roles (
+    id          INT IDENTITY(1,1) CONSTRAINT PK_roles PRIMARY KEY,
+    name        NVARCHAR(100)      NOT NULL CONSTRAINT UQ_roles_name UNIQUE,
+    created_at  DATETIME2(0)       NOT NULL CONSTRAINT DF_roles_created DEFAULT SYSUTCDATETIME()
+);
+
+/* Users */
+CREATE TABLE dbo.users (
+    id          INT IDENTITY(1,1) CONSTRAINT PK_users PRIMARY KEY,
+    name        NVARCHAR(100)      NOT NULL,
+    surname     NVARCHAR(100)      NOT NULL,
+    team_id     INT                NULL,
+    email       NVARCHAR(255)      NULL,
+    created_at  DATETIME2(0)       NOT NULL CONSTRAINT DF_users_created DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_users_team
+        FOREIGN KEY (team_id) REFERENCES dbo.teams(id)
+            ON UPDATE NO ACTION ON DELETE SET NULL
+);
+CREATE INDEX IX_users_team ON dbo.users(team_id);
+CREATE UNIQUE INDEX UX_users_email_notnull
+    ON dbo.users(email)
+    WHERE email IS NOT NULL;
+
+/* Projects: now includes leader_id (FK to users.id) */
+CREATE TABLE dbo.projects (
+    id          INT IDENTITY(1,1) CONSTRAINT PK_projects PRIMARY KEY,
+    name        NVARCHAR(100)      NOT NULL,
+    client_id   INT                NULL,
+    leader_id   INT                NOT NULL, -- 👈 NEW
+    status      NVARCHAR(20)       NOT NULL 
+                   CONSTRAINT DF_projects_status DEFAULT N'In process',
+    created_at  DATETIME2(0)       NOT NULL 
+                   CONSTRAINT DF_projects_created DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT UQ_projects_name UNIQUE (name),
+    CONSTRAINT CK_projects_status CHECK (status IN (N'Finished', N'In process')),
+    CONSTRAINT FK_projects_client
+        FOREIGN KEY (client_id) REFERENCES dbo.clients(id)
+            ON UPDATE NO ACTION ON DELETE SET NULL,
+    CONSTRAINT FK_projects_leader
+        FOREIGN KEY (leader_id) REFERENCES dbo.users(id)
+            ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+CREATE INDEX IX_projects_client ON dbo.projects(client_id);
+CREATE INDEX IX_projects_leader ON dbo.projects(leader_id);
+
+/* Activities */
+CREATE TABLE dbo.activities (
+    id          INT IDENTITY(1,1) CONSTRAINT PK_activities PRIMARY KEY,
+    name        NVARCHAR(100)      NOT NULL,
+    team_id     INT                NULL,
+    description NVARCHAR(200)      NULL,
+    created_at  DATETIME2(0)       NOT NULL CONSTRAINT DF_activities_created DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_activities_team
+        FOREIGN KEY (team_id) REFERENCES dbo.teams(id)
+            ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+CREATE UNIQUE INDEX UX_activities_team_name
+    ON dbo.activities(team_id, name)
+    WHERE team_id IS NOT NULL;
+CREATE INDEX IX_activities_team ON dbo.activities(team_id);
+
+/* User ↔ Roles */
+CREATE TABLE dbo.user_roles (
+    id          INT IDENTITY(1,1) CONSTRAINT PK_user_roles PRIMARY KEY,
+    user_id     INT NOT NULL,
+    role_id     INT NOT NULL,
+    created_at  DATETIME2(0) NOT NULL CONSTRAINT DF_user_roles_created DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT UQ_user_roles UNIQUE (user_id, role_id),
+    CONSTRAINT FK_user_roles_user FOREIGN KEY (user_id) REFERENCES dbo.users(id) ON DELETE CASCADE,
+    CONSTRAINT FK_user_roles_role FOREIGN KEY (role_id) REFERENCES dbo.roles(id) ON DELETE CASCADE
+);
+CREATE INDEX IX_user_roles_user ON dbo.user_roles(user_id);
+CREATE INDEX IX_user_roles_role ON dbo.user_roles(role_id);
+
+/* Time logs */
+CREATE TABLE dbo.time_logs (
+    id          INT IDENTITY(1,1) CONSTRAINT PK_time_logs PRIMARY KEY,
+    user_id     INT           NOT NULL,
+    project_id  INT           NOT NULL,
+    activity_id INT           NOT NULL,
+    log_date    DATE          NOT NULL,
+    hours       DECIMAL(5,2)  NOT NULL,
+    created_at  DATETIME2(0)  NOT NULL CONSTRAINT DF_time_logs_created DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT UQ_time_logs UNIQUE (user_id, project_id, activity_id, log_date),
+    CONSTRAINT CK_time_logs_hours CHECK (hours > 0 AND hours <= 24),
+    CONSTRAINT FK_time_logs_user     FOREIGN KEY (user_id)    REFERENCES dbo.users(id),
+    CONSTRAINT FK_time_logs_project  FOREIGN KEY (project_id) REFERENCES dbo.projects(id),
+    CONSTRAINT FK_time_logs_activity FOREIGN KEY (activity_id) REFERENCES dbo.activities(id)
+);
+CREATE INDEX IX_time_logs_user     ON dbo.time_logs(user_id);
+CREATE INDEX IX_time_logs_project  ON dbo.time_logs(project_id);
+CREATE INDEX IX_time_logs_activity ON dbo.time_logs(activity_id);
+CREATE INDEX IX_time_logs_date     ON dbo.time_logs(log_date);

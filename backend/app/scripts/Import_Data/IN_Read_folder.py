@@ -3,7 +3,11 @@ import os
 from app.scripts.Import_Data import IN_Read_Excel
 
 
-def main(Main_dir=Path(r"C:\Users\JakubFornal\Desktop\Wymiana Kopia\karty pracy\2022")):
+def main(
+    Main_dir=Path(
+        r"C:\Users\JakubFornal\Desktop\PROJECTS\HourTracker_new\karty pracy\2024"
+    ),
+):
 
     year = Main_dir.name
     year = int(year.strip())
@@ -36,4 +40,5 @@ def main(Main_dir=Path(r"C:\Users\JakubFornal\Desktop\Wymiana Kopia\karty pracy\
 
 
 if __name__ == "__main__":
+
     main()

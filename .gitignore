@@ -44,6 +44,8 @@ __pycache__/
 __pycache__/
 *.pyc
 
+karty pracy/
+
 
 # Virtual environments
 .venv/
