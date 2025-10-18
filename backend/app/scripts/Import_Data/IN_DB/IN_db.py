@@ -85,6 +85,7 @@ def check_insert_timeLog(
                 log_date=log_date,
                 hours=hours,
             )
+            print("adding timelog", time_log, flush=True)
             db.add(time_log)
             db.commit()
             db.refresh(time_log)

@@ -33,9 +33,7 @@ def get_activity_list(project_name, date_from, date_to):
                 date_to_obj = datetime.datetime.strptime(date_to, "%Y-%m-%d").date()
                 query = query.filter(TimeLog.log_date <= date_to_obj)
 
-            query = query.group_by(Activity.name).order_by(
-                desc(func.sum(TimeLog.hours))
-            )
+            query = query.group_by(Activity.name).order_by(Activity.name.asc())
 
             results = query.all()
 
@@ -44,11 +42,9 @@ def get_activity_list(project_name, date_from, date_to):
                     {
                         "activity": row.activity_name,
                         "hours": (
-                            float(round(row.total_hours, 2)) if row.total_hours else 0
+                            int(round(row.total_hours, 2)) if row.total_hours else 0
                         ),
-                        "users": get_user_dict(
-                            project_name, row.activity_name
-                        ),  # ✅ FIXED
+                        "users": get_user_dict(project_name, row.activity_name),
                     }
                 )
 
@@ -85,7 +81,7 @@ def get_user_dict(project_name, activity_name):
         for row in results:
             full_name = f"{row.user_name} {row.user_surname}"
             user_dict[full_name] = (
-                float(round(row.total_hours, 2)) if row.total_hours else 0
+                int(round(row.total_hours, 2)) if row.total_hours else 0
             )
 
     return user_dict

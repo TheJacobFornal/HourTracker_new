@@ -4,8 +4,12 @@ export default function DateRange({ value, onChange, onSortChange }) {
   const [from, setFrom] = useState(value?.from ?? "");
   const [to, setTo] = useState(value?.to ?? "");
   const [error, setError] = useState("");
-  const [sortOrder, setSortOrder] = useState("begin"); // new state for sort
+  const [sortOrder, setSortOrder] = useState("end"); // new state for sort
   const isFirst = useRef(true);
+
+  useEffect(() => {
+    onSortChange?.(sortOrder);
+  }, [sortOrder, onSortChange]);
 
   useEffect(() => {
     setFrom(value?.from ?? "");
@@ -50,7 +54,6 @@ export default function DateRange({ value, onChange, onSortChange }) {
 
   const handleSortChange = (e) => {
     setSortOrder(e.target.value);
-    onSortChange?.(e.target.value); // callback for parent
   };
 
   return (
@@ -94,8 +97,8 @@ export default function DateRange({ value, onChange, onSortChange }) {
             onChange={handleSortChange}
             className="modern-input text-[16px] border border-gray-300 rounded-low px-2 py-1 bg-white shadow-sm hover:bg-gray-50"
           >
-            <option value="begin">Początek</option>
-            <option value="end">Koniec</option>
+            <option value="begin">Rosnąco</option>
+            <option value="end">Malejąco</option>
           </select>
         </div>
       </div>

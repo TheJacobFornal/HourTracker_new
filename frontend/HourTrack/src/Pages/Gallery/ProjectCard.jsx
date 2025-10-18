@@ -35,8 +35,8 @@ const ProjectCard = ({ id, hours, user, dateRange, filters }) => (
     <div style={{ ...styles.card, cursor: "pointer" }}>
       <div className="CardMain" style={styles.header}>
         <span style={styles.icon}>🔻</span>
-        <strong>{id}</strong>
-        <span style={{ marginLeft: "auto", fontWeight: "bold" }}>
+        <strong style={styles.id} title={id}>{id}</strong>
+        <span style={styles.hours}>
           {hours} H
         </span>
       </div>
@@ -102,6 +102,8 @@ const styles = {
   },
   header: { display: "flex", alignItems: "center", fontSize: 19 },
   icon: { color: "orange", marginRight: 8 },
+  id: { flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 700 },
+  hours: { marginLeft: "auto", fontWeight: "bold", whiteSpace: "nowrap", flexShrink: 0 },
   body: { marginTop: 10 },
 };
 

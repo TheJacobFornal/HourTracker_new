@@ -21,7 +21,7 @@ class Project(Base):
     )
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(UnicodeText, nullable=False, unique=True)
+    name = Column(Unicode(450), nullable=False, unique=True, index=True)  # <= tu zmiana
     client_id = Column(
         Integer, ForeignKey("clients.id", ondelete="SET NULL"), nullable=True
     )

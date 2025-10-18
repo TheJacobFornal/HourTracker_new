@@ -12,7 +12,9 @@ if getattr(sys, "frozen", False):
         ]
     )
 else:
-    _root_candidates.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
+    _root_candidates.append(
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+    )
 
 for candidate in _root_candidates:
     if not candidate:
@@ -179,10 +181,11 @@ def home(request: Request):
     host = url.hostname or "unknown"
     scheme = url.scheme or "http"
     port = url.port or (443 if scheme == "https" else 80)
-    message = f"Hello, FastAPI is running at {scheme}://{host}:{port}!"
+    message = f"Hello 06 10, FastAPI is running at {scheme}://{host}:{port}!"
     print(f"Received request for home from {scheme}://{host}:{port}", flush=True)
-    return {"message": message}
+    return {"message 06.19": message}
 
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
+    # uvicorn.run(app, host="10.1.69.13", port=8000)

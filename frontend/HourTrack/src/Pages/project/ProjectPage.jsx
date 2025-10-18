@@ -8,7 +8,7 @@ import ActivitiesList from "./ActivitiesList";
 const API_URL = API_ENDPOINTS.projectActivities;
 
 // Simple module-level store other modules can import & read
-export const activitiesStore = { last: null };
+export const activitiesStore = { last: null, meta: null };
 
 export default function ProjectPage() {
   const { projectId } = useParams();
@@ -53,11 +53,30 @@ export default function ProjectPage() {
           const text = await res.text().catch(() => "");
           throw new Error(`HTTP ${res.status} ${text}`);
         }
-        const data = await res.json();
-        console.log("Activities", data);
-        setActivities(data);
-        console.log("Activities", activities);
-        activitiesStore.last = data; // make available to other modules
+        const payload = await res.json();
+        console.log("Activities raw", payload);
+        const normalizedActivities = (() => {
+          if (Array.isArray(payload)) {
+            if (
+              payload.length === 2 &&
+              Array.isArray(payload[0]) &&
+              typeof payload[1] === "number"
+            ) {
+              activitiesStore.meta = { total: payload[1] };
+              return payload[0];
+            }
+            return payload;
+          }
+          if (payload && Array.isArray(payload.activities)) {
+            activitiesStore.meta = {
+              total: payload.total ?? payload.activities.length,
+            };
+            return payload.activities;
+          }
+          return [];
+        })();
+        setActivities(normalizedActivities);
+        activitiesStore.last = normalizedActivities; // make available to other modules
       } catch (e) {
         if (e.name !== "AbortError") setErr(e);
       } finally {

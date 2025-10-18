@@ -5,8 +5,8 @@ from openpyxl import load_workbook
 from app.scripts.Import_Data.IN_DB import IN_db
 from openpyxl.utils import column_index_from_string
 import datetime
-
 from app.scripts.Import_Data.IN_DB import IN_db_check_insert
+from datetime import date
 
 
 ## Additional function ##
@@ -34,8 +34,10 @@ def get_start_col(year, month):
         return 21
     elif year < 2025 or (year == 2025 and month <= 5):  # V
         return 22
-    else:  # X
+    elif year == 2025 and month <= 7:  # X
         return 24
+    else:  # Y
+        return 25
 
 
 ## Excel function ##
@@ -60,6 +62,7 @@ def name_surname(ws, file_name):
 def get_project_map(ws, year, month):
     """Create a mapping of column numbers to project names and insert project do db if not exist"""
     start_col = get_start_col(year, month)
+    print("start col: ", start_col, flush=True)
     col_to_project = {}
 
     # Project names are in row 5, every 5 columns
@@ -94,27 +97,6 @@ def get_date(row, month, year):
         return None
 
 
-## Main functions ##
-def one_row(ws, row, name, surname, month, year, project_map):
-    for col in range(get_start_col(year, month), 179):
-        time_val = ws.cell(row, col).value
-
-        if isinstance(time_val, datetime.time) and time_val != time(0, 0):
-            project = project_map.get(col)
-            activity = get_activity(ws, col)
-            date = get_date(row, month, year)
-
-            if project and date:
-                time_decimal = time_to_decimal(time_val)
-
-                try:
-                    IN_db.check_insert_timeLog(
-                        name, surname, project, activity, date, time_decimal
-                    )
-                except Exception as e:
-                    print(f"❌ Error inserting time log one_for function: {e}")
-
-
 ## Initial Functions - checking exisitng and inserting Projects, User and Activity
 def check_insert_activity(ws, year, month):
     min_col = get_start_col(year, month)
@@ -125,10 +107,87 @@ def check_insert_activity(ws, year, month):
             IN_db_check_insert.check_insert_activity(activity)
 
 
+## Main functions ##
+def one_row(ws, row, name, surname, month, year, project_map):
+    for col in range(get_start_col(year, month), 179):
+        time_val = ws.cell(row, col).value
+
+        if isinstance(time_val, datetime.time) and time_val != time(0, 0):
+            project = project_map.get(col)
+            activity = get_activity(ws, col)
+            date = get_date(row, month, year)
+
+            print(time_val, project, activity, date, flush=True)
+
+            if project and date:
+                time_decimal = time_to_decimal(time_val)
+                try:
+                    IN_db.check_insert_timeLog(
+                        name, surname, project, activity, date, time_decimal
+                    )
+                    print("checking and inserting to time_log", flush=True)
+                except Exception as e:
+                    print(f"❌ Error inserting time log one_for function: {e}")
+            else:
+                missing = []
+                if not project:
+                    missing.append("project")
+                if not date:
+                    missing.append("date")
+                joined = ", ".join(missing)
+                print(
+                    f"⚠️ Skipping row for {name} {surname}: missing {joined}",
+                    flush=True,
+                )
+
+
+## Daily Adding functions ##
+def one_row_daily(ws, row, name, surname, month, year, project_map):
+    for col in range(get_start_col(year, month), 179):
+        time_val = ws.cell(row, col).value
+
+        if isinstance(time_val, datetime.time) and time_val != time(0, 0):
+            project = project_map.get(col)
+            activity = get_activity(ws, col)
+            date = get_date(row, month, year)
+
+            # print(time_val, project, activity, date, flush=True)
+
+            if project and date:
+                time_decimal = time_to_decimal(time_val)
+                try:
+                    # IN_db.check_insert_timeLog(
+                    #   name, surname, project, activity, date, time_decimal
+                    # )
+                    print(
+                        "Daily insert:",
+                        name,
+                        surname,
+                        project,
+                        activity,
+                        date,
+                        time_decimal,
+                        flush=True,
+                    )
+                except Exception as e:
+                    print(f"❌ Error inserting time log one_for function: {e}")
+            else:
+                missing = []
+                if not project:
+                    missing.append("project")
+                if not date:
+                    missing.append("date")
+                joined = ", ".join(missing)
+                print(
+                    f"⚠️ Skipping row for {name} {surname}: missing {joined}",
+                    flush=True,
+                )
+
+
 def main(
-    year,
-    month,
-    Excel_path=r"Y:\Jakub Fornal\karty pracy\2018\02\Krzysztof Dawidziuk.xlsm",
+    year=2023,
+    month=8,
+    Excel_path=r"C:\Users\JakubFornal\Desktop\PROJECTS\HourTracker_new\karty pracy\2023\08\Neska Rafał.xlsm",
 ):
     try:
         wb = load_workbook(Excel_path)
@@ -139,6 +198,8 @@ def main(
         file_name = Excel_path.stem
 
         project_map = get_project_map(ws, year, month)
+
+        print("project_map:", project_map, "month:", month, flush=True)
 
         check_insert_activity(ws, year, month)
         name, surname = name_surname(ws, file_name)
@@ -155,5 +216,45 @@ def main(
         wb.close()
 
 
+def main_Daily(
+    year=2023,
+    month=8,
+    day=15,
+    Excel_path=r"C:\Users\JakubFornal\Desktop\PROJECTS\HourTracker_new\karty pracy\2023\08\Neska Rafał.xlsm",
+):
+    try:
+        wb = load_workbook(Excel_path)
+        ws = wb.active
+
+        Excel_path = Path(Excel_path)
+
+        file_name = Excel_path.stem
+
+        project_map = get_project_map(ws, year, month)
+
+        # print("project_map:", project_map, "month:", month, flush=True)
+
+        check_insert_activity(ws, year, month)
+        name, surname = name_surname(ws, file_name)
+
+        # Process one row
+        row = day + 10
+        one_row_daily(ws, row, name, surname, month, year, project_map)
+        # print(month, year, day, name, surname)
+
+        print("✅ Processing completed successfully", name, surname)
+
+    except Exception as e:
+        print(f"❌ Error in main: {e}")
+    finally:
+        wb.close()
+
+
+def main_test():
+    today = date.today()
+    day = today.day
+    print("Today's date:", day)
+
+
 if __name__ == "__main__":
-    main(2018, 1)
+    main_test()

@@ -3,20 +3,19 @@ import os
 from app.scripts.Import_Data import IN_Read_Excel
 
 
-def main(
-    Main_dir=Path(
-        r"C:\Users\JakubFornal\Desktop\PROJECTS\HourTracker_new\karty pracy\2024"
-    ),
-):
-
+def main(Main_dir):
+    print("Starting import... from ", Main_dir, flush=True)
     year = Main_dir.name
     year = int(year.strip())
-    print(year)
+    print(year, "test elo elo")
 
     for folder in Main_dir.iterdir():
 
         month = folder.name
         month = int(month.strip())
+
+        if year == 2021 and month > 1:
+            continue
 
         for Excel in folder.iterdir():
 
@@ -40,5 +39,5 @@ def main(
 
 
 if __name__ == "__main__":
-
-    main()
+    folder_path = input("Input folder path structure(year, month, Excel): ")
+    main(Path(folder_path))

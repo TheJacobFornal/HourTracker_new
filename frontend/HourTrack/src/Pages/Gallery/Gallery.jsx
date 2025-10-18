@@ -112,6 +112,7 @@ export default function Gallery() {
 
   return (
     <div className="main_box">
+      <h1></h1>
       <div className="HeaderDiv">
         <GalleryHeader result_count={result_count} />
       </div>
