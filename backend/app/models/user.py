@@ -33,6 +33,7 @@ class User(Base):
         "UserRole", back_populates="user", cascade="all, delete-orphan"
     )
     time_logs = relationship("TimeLog", back_populates="user")
+    daily_logs = relationship("DailyLog", back_populates="user")
 
     # projects where this user is the leader
     projects_led = relationship(

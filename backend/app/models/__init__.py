@@ -7,6 +7,7 @@ from .project import Project
 from .activity import Activity
 from .user_role import UserRole
 from .time_log import TimeLog
+from .time_logs_daily import DailyLog
 
 __all__ = [
     "Client",
@@ -17,4 +18,5 @@ __all__ = [
     "Activity",
     "UserRole",
     "TimeLog",
+    "DailyLog",
 ]

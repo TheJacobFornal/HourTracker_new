@@ -1,6 +1,7 @@
 /* Drop (safe re-run) */
 IF OBJECT_ID('dbo.user_roles','U') IS NOT NULL DROP TABLE dbo.user_roles;
 IF OBJECT_ID('dbo.roles','U')       IS NOT NULL DROP TABLE dbo.roles;
+IF OBJECT_ID('dbo.daily_logs','U')  IS NOT NULL DROP TABLE dbo.daily_logs;
 IF OBJECT_ID('dbo.time_logs','U')   IS NOT NULL DROP TABLE dbo.time_logs;
 IF OBJECT_ID('dbo.activities','U')  IS NOT NULL DROP TABLE dbo.activities;
 IF OBJECT_ID('dbo.projects','U')    IS NOT NULL DROP TABLE dbo.projects;
@@ -49,12 +50,12 @@ CREATE UNIQUE INDEX UX_users_email_notnull
     ON dbo.users(email)
     WHERE email IS NOT NULL;
 
-/* Projects: now includes leader_id (FK to users.id) */
+/* Projects (includes leader_id) */
 CREATE TABLE dbo.projects (
     id          INT IDENTITY(1,1) CONSTRAINT PK_projects PRIMARY KEY,
     name        NVARCHAR(100)      NOT NULL,
     client_id   INT                NULL,
-    leader_id   INT                NOT NULL, -- 👈 NEW
+    leader_id   INT                NOT NULL,
     status      NVARCHAR(20)       NOT NULL 
                    CONSTRAINT DF_projects_status DEFAULT N'In process',
     created_at  DATETIME2(0)       NOT NULL 
@@ -119,3 +120,23 @@ CREATE INDEX IX_time_logs_user     ON dbo.time_logs(user_id);
 CREATE INDEX IX_time_logs_project  ON dbo.time_logs(project_id);
 CREATE INDEX IX_time_logs_activity ON dbo.time_logs(activity_id);
 CREATE INDEX IX_time_logs_date     ON dbo.time_logs(log_date);
+
+/* Daily logs (mirror of time_logs) */
+CREATE TABLE dbo.daily_logs (
+    id          INT IDENTITY(1,1) CONSTRAINT PK_daily_logs PRIMARY KEY,
+    user_id     INT           NOT NULL,
+    project_id  INT           NOT NULL,
+    activity_id INT           NOT NULL,
+    log_date    DATE          NOT NULL,
+    hours       DECIMAL(5,2)  NOT NULL,
+    created_at  DATETIME2(0)  NOT NULL CONSTRAINT DF_daily_logs_created DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT UQ_daily_logs UNIQUE (user_id, project_id, activity_id, log_date),
+    CONSTRAINT CK_daily_logs_hours CHECK (hours > 0 AND hours <= 24),
+    CONSTRAINT FK_daily_logs_user     FOREIGN KEY (user_id)    REFERENCES dbo.users(id),
+    CONSTRAINT FK_daily_logs_project  FOREIGN KEY (project_id) REFERENCES dbo.projects(id),
+    CONSTRAINT FK_daily_logs_activity FOREIGN KEY (activity_id) REFERENCES dbo.activities(id)
+);
+CREATE INDEX IX_daily_logs_user     ON dbo.daily_logs(user_id);
+CREATE INDEX IX_daily_logs_project  ON dbo.daily_logs(project_id);
+CREATE INDEX IX_daily_logs_activity ON dbo.daily_logs(activity_id);
+CREATE INDEX IX_daily_logs_date     ON dbo.daily_logs(log_date);

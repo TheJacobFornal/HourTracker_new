@@ -24,6 +24,7 @@ class Activity(Base):
     # relations
     team = relationship("Team", back_populates="activities")
     time_logs = relationship("TimeLog", back_populates="activity")
+    daily_logs = relationship("DailyLog", back_populates="activity")
 
     def __repr__(self):
         return f"Activity(id={self.id}, name={self.name}, team_id={self.team_id})"

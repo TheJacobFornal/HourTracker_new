@@ -62,7 +62,6 @@ def name_surname(ws, file_name):
 def get_project_map(ws, year, month):
     """Create a mapping of column numbers to project names and insert project do db if not exist"""
     start_col = get_start_col(year, month)
-    print("start col: ", start_col, flush=True)
     col_to_project = {}
 
     # Project names are in row 5, every 5 columns
@@ -109,40 +108,7 @@ def check_insert_activity(ws, year, month):
 
 ## Main functions ##
 def one_row(ws, row, name, surname, month, year, project_map):
-    for col in range(get_start_col(year, month), 179):
-        time_val = ws.cell(row, col).value
-
-        if isinstance(time_val, datetime.time) and time_val != time(0, 0):
-            project = project_map.get(col)
-            activity = get_activity(ws, col)
-            date = get_date(row, month, year)
-
-            print(time_val, project, activity, date, flush=True)
-
-            if project and date:
-                time_decimal = time_to_decimal(time_val)
-                try:
-                    IN_db.check_insert_timeLog(
-                        name, surname, project, activity, date, time_decimal
-                    )
-                    print("checking and inserting to time_log", flush=True)
-                except Exception as e:
-                    print(f"❌ Error inserting time log one_for function: {e}")
-            else:
-                missing = []
-                if not project:
-                    missing.append("project")
-                if not date:
-                    missing.append("date")
-                joined = ", ".join(missing)
-                print(
-                    f"⚠️ Skipping row for {name} {surname}: missing {joined}",
-                    flush=True,
-                )
-
-
-## Daily Adding functions ##
-def one_row_daily(ws, row, name, surname, month, year, project_map):
+    record_counter = 0
     for col in range(get_start_col(year, month), 179):
         time_val = ws.cell(row, col).value
 
@@ -156,19 +122,11 @@ def one_row_daily(ws, row, name, surname, month, year, project_map):
             if project and date:
                 time_decimal = time_to_decimal(time_val)
                 try:
-                    # IN_db.check_insert_timeLog(
-                    #   name, surname, project, activity, date, time_decimal
-                    # )
-                    print(
-                        "Daily insert:",
-                        name,
-                        surname,
-                        project,
-                        activity,
-                        date,
-                        time_decimal,
-                        flush=True,
+                    IN_db.check_insert_timeLog(
+                        name, surname, project, activity, date, time_decimal
                     )
+                    record_counter += 1
+                    # print("checking and inserting to time_log", flush=True)
                 except Exception as e:
                     print(f"❌ Error inserting time log one_for function: {e}")
             else:
@@ -182,6 +140,42 @@ def one_row_daily(ws, row, name, surname, month, year, project_map):
                     f"⚠️ Skipping row for {name} {surname}: missing {joined}",
                     flush=True,
                 )
+    return record_counter
+
+
+## Daily Adding functions ##
+def one_row_daily(ws, row, name, surname, month, year, project_map):
+    record_counter = 0
+    for col in range(get_start_col(year, month), 179):
+        time_val = ws.cell(row, col).value
+
+        if isinstance(time_val, datetime.time) and time_val != time(0, 0):
+            project = project_map.get(col)
+            activity = get_activity(ws, col)
+            date = get_date(row, month, year)
+
+            if project and date:
+                time_decimal = time_to_decimal(time_val)
+                try:
+
+                    IN_db.check_insert_daily_timelogs(
+                        name, surname, project, activity, date, time_decimal
+                    )
+                    record_counter += 1
+                except Exception as e:
+                    print(f"❌ Error inserting time log one_for function: {e}")
+            else:
+                missing = []
+                if not project:
+                    missing.append("project")
+                if not date:
+                    missing.append("date")
+                joined = ", ".join(missing)
+                print(
+                    f"⚠️ Skipping row for {name} {surname}: missing {joined}",
+                    flush=True,
+                )
+    return record_counter
 
 
 def main(
@@ -199,16 +193,23 @@ def main(
 
         project_map = get_project_map(ws, year, month)
 
-        print("project_map:", project_map, "month:", month, flush=True)
+        # print("project_map:", project_map, "month:", month, flush=True)
 
         check_insert_activity(ws, year, month)
         name, surname = name_surname(ws, file_name)
 
         # Process each row
+        record_counter = 0
         for row in range(11, 42):
-            one_row(ws, row, name, surname, month, year, project_map)
+            record_counter += one_row(ws, row, name, surname, month, year, project_map)
 
-        print("✅ Processing completed successfully", name, surname)
+        if record_counter > 0:
+            print(
+                "✅", name, surname, "dodano", record_counter, "rekordów!", flush=True
+            )
+        else:
+            print(name, surname, "- Brak danych do zaimportowania!", flush=True)
+        print(" ")
 
     except Exception as e:
         print(f"❌ Error in main: {e}")
@@ -232,28 +233,19 @@ def main_Daily(
 
         project_map = get_project_map(ws, year, month)
 
-        # print("project_map:", project_map, "month:", month, flush=True)
-
         check_insert_activity(ws, year, month)
         name, surname = name_surname(ws, file_name)
 
         # Process one row
         row = day + 10
-        one_row_daily(ws, row, name, surname, month, year, project_map)
-        # print(month, year, day, name, surname)
+        counter = one_row_daily(ws, row, name, surname, month, year, project_map)
 
-        print("✅ Processing completed successfully", name, surname)
+        print(name, surname, "- Dodano rekordów:", counter, flush=True)
 
     except Exception as e:
         print(f"❌ Error in main: {e}")
     finally:
         wb.close()
-
-
-def main_test():
-    today = date.today()
-    day = today.day
-    print("Today's date:", day)
 
 
 if __name__ == "__main__":

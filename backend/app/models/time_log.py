@@ -13,13 +13,13 @@ from sqlalchemy.orm import relationship
 from app.db.base import Base
 
 
-class DailyLog(Base):
-    __tablename__ = "daily_logs"
+class TimeLog(Base):
+    __tablename__ = "time_logs"
     __table_args__ = (
         UniqueConstraint(
-            "user_id", "project_id", "activity_id", "log_date", name="UQ_daily_logs"
+            "user_id", "project_id", "activity_id", "log_date", name="UQ_time_logs"
         ),
-        CheckConstraint("hours > 0 AND hours <= 24", name="CK_daily_logs_hours"),
+        CheckConstraint("hours > 0 AND hours <= 24", name="CK_time_logs_hours"),
     )
 
     id = Column(Integer, primary_key=True, index=True)
@@ -32,13 +32,13 @@ class DailyLog(Base):
         DateTime(timezone=False), nullable=False, server_default=func.sysutcdatetime()
     )
 
-    # relationships (mirroring TimeLog)
-    user = relationship("User", back_populates="daily_logs")
-    project = relationship("Project", back_populates="daily_logs")
-    activity = relationship("Activity", back_populates="daily_logs")
+    # relations
+    user = relationship("User", back_populates="time_logs")
+    project = relationship("Project", back_populates="time_logs")
+    activity = relationship("Activity", back_populates="time_logs")
 
     def __repr__(self):
         return (
-            f"DailyLog(id={self.id}, user_id={self.user_id}, project_id={self.project_id}, "
+            f"TimeLog(id={self.id}, user_id={self.user_id}, project_id={self.project_id}, "
             f"activity_id={self.activity_id}, log_date={self.log_date}, hours={self.hours})"
         )

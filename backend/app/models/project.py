@@ -41,6 +41,7 @@ class Project(Base):
         "User", back_populates="projects_led", foreign_keys=[leader_id]
     )
     time_logs = relationship("TimeLog", back_populates="project")
+    daily_logs = relationship("DailyLog", back_populates="project")
 
     def __repr__(self):
         return (

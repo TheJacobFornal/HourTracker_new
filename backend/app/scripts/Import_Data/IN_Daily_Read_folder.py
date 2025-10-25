@@ -10,7 +10,9 @@ def main(Main_dir):
     year = today.year
     month = today.month
 
-    print("Daily import... from ", Main_dir, flush=True)
+    day_import = day - 1
+
+    print("Daily import... from ", Main_dir, day_import, month, year, flush=True)
 
     for folder_yaer in Main_dir.iterdir():
         year_dir = folder_yaer.name
@@ -23,6 +25,7 @@ def main(Main_dir):
                 month_dir_int = int(month_dir.strip())
 
                 if month_dir_int == month:
+
                     for Excel in folder_month.iterdir():
 
                         # Skip if it's not a file
@@ -39,10 +42,9 @@ def main(Main_dir):
                             continue
 
                         # print(month, year, day, Excel.name)
-                        IN_Read_Excel.main_Daily(year, month, day, Excel)
+                        IN_Read_Excel.main_Daily(year, month, day_import, Excel)
 
 
 if __name__ == "__main__":
-    folder_path = input("Input folder path structure(year, month, Excel): ")
     folder_path = r"C:\Users\JakubFornal\Desktop\KP_symulacja_Daily"
     main(Path(folder_path))
