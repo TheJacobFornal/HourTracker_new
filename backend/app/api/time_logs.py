@@ -1,10 +1,13 @@
-# projects.py
-from flask import Blueprint, jsonify
+# app/api/time_logs.py
+from fastapi import APIRouter
 
-time_logs_bp = Blueprint("projects", __name__)
+router = APIRouter(prefix="/time-logs", tags=["time_logs"])
 
 
-@time_logs_bp.route("/", methods=["GET"])
-def get_projects():
-    projects = [{"id": 1, "name": "Project 1"}, {"id": 2, "name": "Project 2"}]
-    return jsonify(projects)
+@router.get("/")
+def get_time_logs():
+    # Sample data for time logs
+    return [
+        {"id": 1, "user_id": 1, "hours": 5, "date": "2026-01-30"},
+        {"id": 2, "user_id": 2, "hours": 3, "date": "2026-01-30"},
+    ]

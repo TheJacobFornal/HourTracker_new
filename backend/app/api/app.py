@@ -1,3 +1,4 @@
+from app.scripts.Export_Data_DB import OUT_Main
 import uvicorn
 import os
 import sys
@@ -31,9 +32,13 @@ from sqlalchemy.orm import Session
 from app.db.session import SessionLocal
 from app.models.project import Project
 from app.models.time_log import TimeLog
+from app.models.time_logs_daily import DailyLog
 from app.models.user import User
-from app.scripts.Export_Data import Activity_Search
-from app.scripts.Export_Data import Projects_Search
+from app.scripts.Export_Data_DB import Activity_Search
+from app.scripts.Export_Data_DB import Projects_Search
+from app.scripts.Export_Excel import Export_To_Excel
+from datetime import datetime
+from fastapi.responses import StreamingResponse
 
 
 def get_db() -> Session:
@@ -88,6 +93,9 @@ def search_project(payload: dict):
     return {"projects": projects, "record_counter": record_counter}
 
 
+from sqlalchemy import func
+
+
 @app.post("/api/project/header_info")
 def header_info(payload: dict, db: Session = Depends(get_db)):
     project_name = payload.get("project_name")
@@ -96,22 +104,32 @@ def header_info(payload: dict, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Missing project_name")
 
     try:
+        # Aggregate both TimeLog and DailyLog
         row = (
             db.query(
                 Project.name.label("project_name"),
                 Project.status.label("status"),
                 User.name.label("leader_name"),
                 User.surname.label("leader_surname"),
-                func.min(TimeLog.log_date).label("date_from"),
-                func.max(TimeLog.log_date).label("date_to"),
-                func.sum(TimeLog.hours).label("total_hours"),
+                func.min(func.coalesce(TimeLog.log_date, DailyLog.log_date)).label(
+                    "date_from"
+                ),
+                func.max(func.coalesce(TimeLog.log_date, DailyLog.log_date)).label(
+                    "date_to"
+                ),
+                (
+                    func.coalesce(func.sum(TimeLog.hours), 0)
+                    + func.coalesce(func.sum(DailyLog.hours), 0)
+                ).label("total_hours"),
             )
             .outerjoin(TimeLog, TimeLog.project_id == Project.id)
+            .outerjoin(DailyLog, DailyLog.project_id == Project.id)
             .outerjoin(User, User.id == Project.leader_id)
             .filter(Project.name == project_name)
             .group_by(Project.name, Project.status, User.name, User.surname)
             .first()
         )
+
     except Exception as exc:
         print(f"Error fetching header info for {project_name}: {exc}", flush=True)
         raise HTTPException(
@@ -134,45 +152,29 @@ def header_info(payload: dict, db: Session = Depends(get_db)):
     }
 
 
-@app.post("/api/project/activities_details")
+@app.post("/api/project/activities_details")  # List with activities and users summary
 def activity_details(payload: dict):
     project_name = payload.get("project_name")
     date_from = payload.get("date_from")
     date_to = payload.get("date_to")
 
-    print("activity date from:", date_from)
+    final_list = OUT_Main.get_project_activities_user_json(
+        project_name, date_from, date_to
+    )
 
-    activity_list = Activity_Search.get_activity_list(project_name, date_from, date_to)
-
-    print(project_name, date_from, date_to, flush=True)
-
-    return activity_list
+    return final_list
 
 
-@app.get("/api/projects/test")
-def project_test():
-    example_project1 = {
-        "id": "IX_215323",
-        "hours": 5100,
-        "user": "Eryk Kr�likowski",
-        "dateRange": "2025-05-22 to 2025-07-31",
-    }
-
-    example_project2 = {
-        "id": "IX_215323",
-        "hours": 55,
-        "user": "Eryk Kr�likowski",
-        "dateRange": "2025-05-22 to 2025-07-31",
-    }
-
-    return [example_project1, example_project2]
-
-
-@app.get("/get/leaders")
-def get_leaders():
-    print("Received request for leaders", flush=True)
-    leaders = ["Mariusz", "Rafal", "Zbyszek"]
-    return leaders
+@app.post("/api/project/export_excel")
+def export_to_excel(payload: dict):
+    project_name = payload.get("project_name")
+    excel_file = Export_To_Excel.main(project_name)
+    filename = f"{project_name}_{datetime.now().strftime('%Y-%m-%d')}_HourTracker.xlsx"
+    return StreamingResponse(
+        excel_file,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
 
 
 @app.get("/")
@@ -183,9 +185,23 @@ def home(request: Request):
     port = url.port or (443 if scheme == "https" else 80)
     message = f"Hello 06 10, FastAPI is running at {scheme}://{host}:{port}!"
     print(f"Received request for home from {scheme}://{host}:{port}", flush=True)
-    return {"message 06.19": message}
+    return {"message": message}
+
+
+@app.get("/version")
+def version():
+    version = "4.0.0"
+    data_realse = "30.01.26"
+    return {"version": version, "data_realse": data_realse}
+
+
+@app.get("/get/leaders")
+def get_leaders():
+    print("Received request for leaders", flush=True)
+    leaders = ["Mariusz", "Rafal", "Zbyszek"]
+    return leaders
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000)
-    # uvicorn.run(app, host="10.1.69.13", port=8000)
+    # uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="10.1.69.13", port=8000)

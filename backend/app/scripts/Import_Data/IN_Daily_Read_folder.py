@@ -2,49 +2,54 @@ from pathlib import Path
 import os
 from app.scripts.Import_Data import IN_Read_Excel
 from datetime import date
+from app.scripts.Import_Data.IN_DB import IN_db
+from datetime import datetime
+from datetime import date, timedelta
+
+
+def get_Excel_folder(folder_dir, year, month):
+    for folder in folder_dir.iterdir():
+        if folder.is_dir() and int(folder.name) == year:
+            for subfolder in folder.iterdir():
+                folder_number = subfolder.name.split(" ")[0]
+                if subfolder.is_dir() and int(folder_number) == month:
+                    return subfolder
 
 
 def main(Main_dir):
-    today = date.today()
-    day = today.day
-    year = today.year
-    month = today.month
+    yesterday = date.today() - timedelta(days=1)
+    year = yesterday.year
+    month = yesterday.month
 
-    day_import = day - 1
+    Excel_folder = get_Excel_folder(Main_dir, year, month)
 
-    print("Daily import... from ", Main_dir, day_import, month, year, flush=True)
+    print("Daily import... from ", Excel_folder, month, year, flush=True)
+    print()
 
-    for folder_yaer in Main_dir.iterdir():
-        year_dir = folder_yaer.name
-        year_dir_int = int(year_dir.strip())
+    IN_db.delete_temp_monthly_data(
+        year, month
+    )  # delete temp daily data from this month
 
-        if year_dir_int == year:  # Year Folder Selection
-            for folder_month in folder_yaer.iterdir():  # Month Folder Selection
+    for Excel in Excel_folder.iterdir():
+        print(Excel.name)
 
-                month_dir = folder_month.name
-                month_dir_int = int(month_dir.strip())
+        # Skip if it's not a file
+        if not Excel.is_file():
+            continue
 
-                if month_dir_int == month:
+        # Skip if it doesn't have an Excel extension
+        if Excel.suffix.lower() not in [".xlsx", ".xls", ".xlsm"]:
+            continue
 
-                    for Excel in folder_month.iterdir():
+        # Skip files starting with "0"
+        base_name = Excel.name
+        if base_name.startswith("00") or base_name.startswith("~$"):
+            continue
 
-                        # Skip if it's not a file
-                        if not Excel.is_file():
-                            continue
-
-                        # Skip if it doesn't have an Excel extension
-                        if Excel.suffix.lower() not in [".xlsx", ".xls", ".xlsm"]:
-                            continue
-
-                        # Skip files starting with "0"
-                        base_name = Excel.name
-                        if base_name.startswith("00") or base_name.startswith("~$"):
-                            continue
-
-                        # print(month, year, day, Excel.name)
-                        IN_Read_Excel.main_Daily(year, month, day_import, Excel)
+        # print(month, year, day, Excel.name)
+        IN_Read_Excel.main_Daily(year, month, Excel)
 
 
 if __name__ == "__main__":
-    folder_path = r"C:\Users\JakubFornal\Desktop\KP_symulacja_Daily"
-    main(Path(folder_path))
+    # main(Path(r"C:\Users\JakubFornal\Desktop\KP_TEST"))
+    main(Path(r"\\SERVER\Projekty\00-BIURO\Karta pracy"))  # Path to folder on server

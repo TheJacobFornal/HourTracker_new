@@ -14,6 +14,7 @@ export default function ActivitiesList({ data = [] }) {
           key={`${row.activity}-${idx}`}
           activity={row.activity}
           hours={row.hours}
+          daily_hours={row.daily_hours}
           users={row.users}
         />
       ))}

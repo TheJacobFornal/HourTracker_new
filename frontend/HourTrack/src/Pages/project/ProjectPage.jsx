@@ -5,6 +5,9 @@ import ProjectHeader from "./Project_Header";
 import ProjectFiltr from "./Project_Filters";
 import { API_ENDPOINTS } from "../../config/api";
 import ActivitiesList from "./ActivitiesList";
+import User_Summary from "./Project_User_Sumarry";
+import Project_Export from "./Project_Export";
+
 const API_URL = API_ENDPOINTS.projectActivities;
 
 // Simple module-level store other modules can import & read
@@ -30,6 +33,7 @@ export default function ProjectPage() {
   }, []);
 
   const [activities, setActivities] = useState([]);
+  const [usersSummary, setUsersSummary] = useState([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
 
@@ -55,40 +59,50 @@ export default function ProjectPage() {
         }
         const payload = await res.json();
         console.log("Activities raw", payload);
-        const normalizedActivities = (() => {
-          if (Array.isArray(payload)) {
-            if (
-              payload.length === 2 &&
-              Array.isArray(payload[0]) &&
-              typeof payload[1] === "number"
-            ) {
+
+        let activitiesData = [];
+        let usersSummaryData = [];
+
+        if (Array.isArray(payload)) {
+          // Assuming the payload matches the structure you showed.
+          if (payload.length === 2) {
+            const activitiesPart = Array.isArray(payload[0]) ? payload[0] : [];
+            const usersSummaryPart = Array.isArray(payload[1])
+              ? payload[1]
+              : [];
+
+            // If needed, you can handle meta info here.
+            if (payload[1] && typeof payload[1] === "number") {
               activitiesStore.meta = { total: payload[1] };
-              return payload[0];
+            } else if (payload[1] && payload[1].total) {
+              activitiesStore.meta = { total: payload[1].total };
             }
-            return payload;
+
+            activitiesData = activitiesPart;
+            usersSummaryData = usersSummaryPart;
+          } else {
+            // Fallback if it doesn't match the expected structure
+            activitiesData = payload;
           }
-          if (payload && Array.isArray(payload.activities)) {
-            activitiesStore.meta = {
-              total: payload.total ?? payload.activities.length,
-            };
-            return payload.activities;
-          }
-          return [];
-        })();
-        setActivities(normalizedActivities);
-        activitiesStore.last = normalizedActivities; // make available to other modules
+        } else if (payload && Array.isArray(payload.activities)) {
+          activitiesStore.meta = {
+            total: payload.total ?? payload.activities.length,
+          };
+          activitiesData = payload.activities;
+        }
+
+        setActivities(activitiesData);
+        setUsersSummary(usersSummaryData);
+        activitiesStore.last = activitiesData; // make available to other modules
       } catch (e) {
         if (e.name !== "AbortError") setErr(e);
       } finally {
         setLoading(false);
       }
     })();
+
     return () => ac.abort();
   }, [projectId, dates.from, dates.to]);
-
-  useEffect(() => {
-    console.log("activities state updated:", activities);
-  }, [activities]);
 
   return (
     <div className="Project_main">
@@ -101,6 +115,21 @@ export default function ProjectPage() {
       <ProjectFiltr filters={dates} setFilters={setDates} />
 
       {!loading && !err && <ActivitiesList data={activities} />}
+
+      <div
+        style={{
+          margin: "50px 0",
+          height: "4px",
+          width: "1100px",
+          backgroundColor: "#0898f2ff",
+          borderRadius: "6px",
+          boxShadow: "0 2px 6px rgba(8, 152, 242, 0.4)",
+        }}
+      />
+
+      {!loading && !err && <User_Summary data={usersSummary} />}
+
+      {!loading && !err && <Project_Export projectId={projectId} />}
     </div>
   );
 }

@@ -90,6 +90,7 @@ export default function Gallery() {
           return;
         }
         const data = await res.json();
+        console.log("API data:", data.projects);
         setProjectList(data.projects); // list of projects
         setResultCount(data.record_counter); // total matching rows
         setApiReady(true);

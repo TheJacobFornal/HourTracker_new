@@ -26,7 +26,7 @@ const buildDateQuery = (filters) => {
   return qs ? `?${qs}` : "";
 };
 
-const ProjectCard = ({ id, hours, user, dateRange, filters }) => (
+const ProjectCard = ({ id, hours, hours_daily, user, dateRange, filters }) => (
   <Link
     to={`/projects/${encodeURIComponent(id)}${buildDateQuery(filters)}`}
     className="block no-underline"
@@ -35,9 +35,11 @@ const ProjectCard = ({ id, hours, user, dateRange, filters }) => (
     <div style={{ ...styles.card, cursor: "pointer" }}>
       <div className="CardMain" style={styles.header}>
         <span style={styles.icon}>🔻</span>
-        <strong style={styles.id} title={id}>{id}</strong>
+        <strong style={styles.id} title={id}>
+          {id}
+        </strong>
         <span style={styles.hours}>
-          {hours} H
+          {hours} H {hours_daily > 0 && ` + ${hours_daily} H`}
         </span>
       </div>
       <hr />
@@ -102,8 +104,20 @@ const styles = {
   },
   header: { display: "flex", alignItems: "center", fontSize: 19 },
   icon: { color: "orange", marginRight: 8 },
-  id: { flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 700 },
-  hours: { marginLeft: "auto", fontWeight: "bold", whiteSpace: "nowrap", flexShrink: 0 },
+  id: {
+    flex: 1,
+    minWidth: 0,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    fontWeight: 700,
+  },
+  hours: {
+    marginLeft: "auto",
+    fontWeight: "bold",
+    whiteSpace: "nowrap",
+    flexShrink: 0,
+  },
   body: { marginTop: 10 },
 };
 

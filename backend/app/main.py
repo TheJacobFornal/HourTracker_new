@@ -4,10 +4,16 @@ from app.api import projects, activities, teams, users, time_logs
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="HourTrack API", version="1.0.0")
+    app = FastAPI(title="HourTrack API", version="4.0.0")
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=[
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://10.1.69.100",
+            "http://hourtracker.pemes.net",
+        ],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -20,8 +26,9 @@ def create_app() -> FastAPI:
 
     @app.get("/health")
     def health():
-        return {"status": "ok"}
+        return {"status": "ok1"}
 
+    print("API is working on host")
     return app
 
 

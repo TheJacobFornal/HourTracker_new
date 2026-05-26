@@ -1,4 +1,3 @@
-// Gallery_Grid.jsx
 import React from "react";
 import ProjectCard from "./ProjectCard";
 
@@ -20,6 +19,7 @@ export default function GalleryGrid({
               key={p.id}
               id={p.id}
               hours={p.hours}
+              hours_daily={p.daily_hours > 0 ? p.daily_hours : null} // hide 0
               user={p.user}
               dateRange={p.dateRange}
               filters={filters}
@@ -27,12 +27,13 @@ export default function GalleryGrid({
           ))}
         </div>
       </div>
+
       {/* Pagination controls */}
-      <div
-        className="flex flex-col items-center my-6"
-        style={{ padding: "20px" }}
-      >
-        {totalPages > 1 && (
+      {totalPages > 1 && (
+        <div
+          className="flex flex-col items-center my-6"
+          style={{ padding: "20px" }}
+        >
           <div className="flex items-center gap-4 bg-white rounded-lg shadow px-6 py-3">
             <button
               className="px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 hover:bg-gray-200 transition disabled:opacity-50"
@@ -52,8 +53,8 @@ export default function GalleryGrid({
               Next
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </>
   );
 }

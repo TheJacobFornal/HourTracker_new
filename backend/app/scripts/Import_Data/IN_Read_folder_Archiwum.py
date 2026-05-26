@@ -21,7 +21,7 @@ def go_with_Excels_in_folder(year, month, folder: Path):
             continue
 
         # print(month, year, Excel.name)
-        IN_Read_Excel.main(year, month, Excel)
+        IN_Read_Excel.main_Archium(year, month, Excel)
 
 
 def main_multiple_folder(
@@ -39,7 +39,7 @@ def main_multiple_folder(
 
 
 if __name__ == "__main__":
-    print("Importer do softu HourTracker (version v1.0):")
+    print("Importer do softu HourTracker (version v4.0 - 26.01.26):")
     mode = input(
         "1 - Import całego miesiąca \n2 - Import jednego Excela \n Wybierz tryb (1/2): "
     )
@@ -67,8 +67,8 @@ if __name__ == "__main__":
             from app.scripts.Import_Data.IN_DB import IN_db
 
             IN_db.delete_temp_monthly_data(
-                int(year), int(month) - 1
-            )  # delte previous month temp logs
+                int(year), int(month_int)
+            )  # delte this month data from temp table
 
         print()
 
@@ -83,6 +83,6 @@ if __name__ == "__main__":
         month = input("Podaj miesiąc (1-12): ")
         print()
         print("Loading...")
-        IN_Read_Excel.main(int(year), int(month), Path(Excel))
+        IN_Read_Excel.main_Archium(int(year), int(month), Path(Excel))
 
     input("Koniec ... naciśnij Enter aby zakończyć.")

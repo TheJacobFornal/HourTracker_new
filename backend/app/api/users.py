@@ -1,10 +1,13 @@
-# projects.py
-from flask import Blueprint, jsonify
+# app/api/users.py
+from fastapi import APIRouter
 
-users_bp = Blueprint("projects", __name__)
+router = APIRouter(prefix="/users", tags=["users"])
 
 
-@users_bp.route("/", methods=["GET"])
-def get_projects():
-    projects = [{"id": 1, "name": "Project 1"}, {"id": 2, "name": "Project 2"}]
-    return jsonify(projects)
+@router.get("/")
+def get_users():
+    # Sample data for users
+    return [
+        {"id": 1, "name": "User 1", "email": "user1@example.com"},
+        {"id": 2, "name": "User 2", "email": "user2@example.com"},
+    ]

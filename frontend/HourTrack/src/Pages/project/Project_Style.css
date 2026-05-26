@@ -18,6 +18,7 @@
   text-align: left;
   font-size: 20px;
   font-weight: 500;
+  min-width: 280px;
 }
 
 .filters-container {
@@ -78,4 +79,107 @@
 .user_List_acitivity li:hover {
   background: #6bbaff14;
 }
+
+
+
+/* Project_User_Summary.css  */
+/* Container */
+.user-summary-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-left: 0px; /* aligns table and "No user" message */
+}
+
+/* "No user" message */
+.no-user {
+  font-size: 19px;
+  color: #4b5563; /* gray-700 */
+  margin-left: 20px;
+}
+
+/* Table */
+.user-summary-table {
+  width: 1150px;
+  border-collapse: collapse;
+  background-color: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem; /* rounded */
+  padding-left: 150px;
+}
+
+/* Header */
+.user-summary-header {
+  border-bottom: 1px solid #e5e7eb; /* gray-200 */
+  padding: 1rem 1rem; /* py-5 px-4 */
+  text-align: left;
+  font-size: 21px;
+  font-weight: 600;
+  background-color: rgb(249, 249, 249);
+  color: #1f2937; /* gray-800 */
+}
+
+/* Table rows */
+.user-summary-row:hover {
+  background-color: #ebf3fb; /* gray-50 */
+  transition: background-color 0.2s ease;
+}
+
+/* Cells */
+.user-summary-cell {
+  border-bottom: 1px solid #f3f4f6; /* gray-100 */
+  padding: 12px ; /* py-5 px-4 */
+  font-size: 19px;
+  font-weight: 500;
+  color: #111827; /* gray-900 */
+}
+
+/* Special left padding for name column */
+.name-cell, .user-summary-header1 {
+  padding-left: 80px; /* equivalent to pl-20 or 80px */
+}
+
+
+
+
+/* Project_Export.css */
+.export-button {
+  padding: 15px 28px;
+  background: linear-gradient(180deg, #0898f2, #0084d6);
+  color: white;
+  border: none;
+  border-radius: 9px; /* fully rounded, pill look */
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: 500;
+
+  box-shadow:
+    0 4px 10px rgba(8, 152, 242, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+
+  transition: all 0.2s ease;
+}
+
+
+.export-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+
+.export-row {
+  margin-top: 30px;
+  display: flex;
+  align-items: center;
+  width: 1150px
+}
+
+.export-message {
+  margin-left: 12px; /* space between button and message */
+  white-space: nowrap;
+  font-size: 19px;
+  font-weight: 500;
+}
+
+
 

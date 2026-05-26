@@ -66,7 +66,12 @@ def get_project_map(ws, year, month):
 
     # Project names are in row 5, every 5 columns
     for col in range(start_col, 179, 5):
-        project_name = ws.cell(5, col).value
+        cell_value = ws.cell(5, col).value
+        if cell_value:
+            
+            project_name = str(cell_value).split()[0]
+        else:
+            project_name = None
 
         if project_name is not None:
             project_name = str(project_name).strip()  # Convert to string
@@ -106,45 +111,13 @@ def check_insert_activity(ws, year, month):
             IN_db_check_insert.check_insert_activity(activity)
 
 
-## Main functions ##
-def one_row(ws, row, name, surname, month, year, project_map):
-    record_counter = 0
-    for col in range(get_start_col(year, month), 179):
-        time_val = ws.cell(row, col).value
-
-        if isinstance(time_val, datetime.time) and time_val != time(0, 0):
-            project = project_map.get(col)
-            activity = get_activity(ws, col)
-            date = get_date(row, month, year)
-
-            # print(time_val, project, activity, date, flush=True)
-
-            if project and date:
-                time_decimal = time_to_decimal(time_val)
-                try:
-                    IN_db.check_insert_timeLog(
-                        name, surname, project, activity, date, time_decimal
-                    )
-                    record_counter += 1
-                    # print("checking and inserting to time_log", flush=True)
-                except Exception as e:
-                    print(f"❌ Error inserting time log one_for function: {e}")
-            else:
-                missing = []
-                if not project:
-                    missing.append("project")
-                if not date:
-                    missing.append("date")
-                joined = ", ".join(missing)
-                print(
-                    f"⚠️ Skipping row for {name} {surname}: missing {joined}",
-                    flush=True,
-                )
-    return record_counter
+## Main Functions ##
+# Mode:
+# Daily = Daily_logs
+# Archive = Dane z archium
 
 
-## Daily Adding functions ##
-def one_row_daily(ws, row, name, surname, month, year, project_map):
+def one_row(ws, row, name, surname, month, year, project_map, mode):
     record_counter = 0
     for col in range(get_start_col(year, month), 179):
         time_val = ws.cell(row, col).value
@@ -156,33 +129,41 @@ def one_row_daily(ws, row, name, surname, month, year, project_map):
 
             if project and date:
                 time_decimal = time_to_decimal(time_val)
-                try:
 
-                    IN_db.check_insert_daily_timelogs(
-                        name, surname, project, activity, date, time_decimal
-                    )
-                    record_counter += 1
-                except Exception as e:
-                    print(f"❌ Error inserting time log one_for function: {e}")
-            else:
-                missing = []
-                if not project:
-                    missing.append("project")
-                if not date:
-                    missing.append("date")
-                joined = ", ".join(missing)
-                print(
-                    f"⚠️ Skipping row for {name} {surname}: missing {joined}",
-                    flush=True,
-                )
+                if mode in ("Daily", "Archive"):
+                    try:
+                        # print(activity, project, date, time_val, flush=True)
+                        insert_func = (
+                            IN_db.check_insert_daily_timelogs  # value "if" from IT below
+                            if mode == "Daily"
+                            else IN_db.check_insert_timeLog  # value "else" from IT above
+                        )
+
+                        insert_func(
+                            name, surname, project, activity, date, time_decimal
+                        )
+
+                        record_counter += 1
+
+                    except Exception as e:
+                        print(f"❌ Error inserting time log ({mode}): {e}", flush=True)
+
+                else:
+                    missing = [
+                        field
+                        for field, value in {"project": project, "date": date}.items()
+                        if not value
+                    ]
+                    if missing:
+                        print(
+                            f"⚠️ Skipping row for {name} {surname}: missing {', '.join(missing)}",
+                            flush=True,
+                        )
+
     return record_counter
 
 
-def main(
-    year=2023,
-    month=8,
-    Excel_path=r"C:\Users\JakubFornal\Desktop\PROJECTS\HourTracker_new\karty pracy\2023\08\Neska Rafał.xlsm",
-):
+def read_Sheet(year, month, Excel_path, mode):
     try:
         wb = load_workbook(Excel_path)
         ws = wb.active
@@ -193,15 +174,15 @@ def main(
 
         project_map = get_project_map(ws, year, month)
 
-        # print("project_map:", project_map, "month:", month, flush=True)
-
         check_insert_activity(ws, year, month)
         name, surname = name_surname(ws, file_name)
 
         # Process each row
         record_counter = 0
         for row in range(11, 42):
-            record_counter += one_row(ws, row, name, surname, month, year, project_map)
+            record_counter += one_row(
+                ws, row, name, surname, month, year, project_map, mode
+            )
 
         if record_counter > 0:
             print(
@@ -217,36 +198,27 @@ def main(
         wb.close()
 
 
-def main_Daily(
-    year=2023,
-    month=8,
-    day=15,
-    Excel_path=r"C:\Users\JakubFornal\Desktop\PROJECTS\HourTracker_new\karty pracy\2023\08\Neska Rafał.xlsm",
-):
-    try:
-        wb = load_workbook(Excel_path)
-        ws = wb.active
+def main_Archium(year, month, Excel_path):
+    read_Sheet(
+        year=year,
+        month=month,
+        Excel_path=Excel_path,
+        mode="Archive",
+    )
 
-        Excel_path = Path(Excel_path)
 
-        file_name = Excel_path.stem
-
-        project_map = get_project_map(ws, year, month)
-
-        check_insert_activity(ws, year, month)
-        name, surname = name_surname(ws, file_name)
-
-        # Process one row
-        row = day + 10
-        counter = one_row_daily(ws, row, name, surname, month, year, project_map)
-
-        print(name, surname, "- Dodano rekordów:", counter, flush=True)
-
-    except Exception as e:
-        print(f"❌ Error in main: {e}")
-    finally:
-        wb.close()
+def main_Daily(year, month, Excel_path):
+    read_Sheet(
+        year=year,
+        month=month,
+        Excel_path=Excel_path,
+        mode="Daily",
+    )
 
 
 if __name__ == "__main__":
-    main_test()
+    main_Daily(
+        2033,
+        9,
+        Path(r"C:\Users\JakubFornal\Desktop\Łukomski Krzysztof.xlsm"),
+    )

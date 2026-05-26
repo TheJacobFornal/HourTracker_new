@@ -1,0 +1,17 @@
+Monthly Importer 
+Version 4 - zmiana nazwy projektu - tylko pierwszy wyraz bez opisu (26.01.2026)
+
+
+Daily Import 
+Last v3 - path from server KP folder
+Version 4 - zmiana nazwy projektu - tylko pierwszy wyraz bez opisu (26.01.2026)
+
+
+API 
+Version 4 - dodanie sumy godzin dla usera + eksporter do Excela (Aktywność, User, Hours) (30.01.2026)
+
+Frontend 
+Version 4 - dodanie panelu Sumy godzin z usera na Projekcie + Przycisk Export (zminay do API v4)(30.01.2026)
+
+
+!! na serwerze jest wersja v4 na zmienioną nazwe na v3, aby była zgodonść z akcją z charmonogramu zadań

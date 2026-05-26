@@ -1,10 +1,9 @@
-# projects.py
-from flask import Blueprint, jsonify
+# app/api/projects.py
+from fastapi import APIRouter
 
-projects_bp = Blueprint("projects", __name__)
+router = APIRouter(prefix="/projects", tags=["projects"])
 
 
-@projects_bp.route("/", methods=["GET"])
+@router.get("/")
 def get_projects():
-    projects = [{"id": 1, "name": "Project 1"}, {"id": 2, "name": "Project 2"}]
-    return jsonify(projects)
+    return [{"id": 1, "name": "Project 1"}, {"id": 2, "name": "Project 2"}]

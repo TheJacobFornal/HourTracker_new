@@ -2,32 +2,56 @@ import React, { useMemo, useState } from "react";
 import "./Project_Style.css";
 import triangle from "../../assets/triangle.png";
 
+// ✅ Safe normalization for all data shapes
 function normalizeUsers(users) {
   if (!users) return [];
-  // if it's a mapping: { "Name": hours, ... }
+
+  // handle both mapping and array formats
   if (!Array.isArray(users)) {
-    return Object.entries(users).map(([name, hours]) => ({ name, hours }));
+    return Object.entries(users).map(([name, value]) => {
+      if (typeof value === "object" && value !== null) {
+        return {
+          name,
+          hours: Number(value.hours) || 0,
+          daily_hours: Number(value.daily_hours) || 0,
+        };
+      }
+      return { name, hours: Number(value) || 0, daily_hours: 0 };
+    });
   }
-  // already an array: [{ name, hours }]
-  return users;
+
+  return users.map((u) => ({
+    name: u.name,
+    hours: Number(u.hours) || 0,
+    daily_hours: Number(u.daily_hours) || 0,
+  }));
 }
 
 export default function ActivityItem({
   activity,
   hours,
+  daily_hours,
   users,
   defaultOpen = false,
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const usersList = useMemo(() => normalizeUsers(users), [users]);
 
-  // if hours not sent, derive from users
-  const total = useMemo(
+  // Calculate totals safely
+  const totalHours = useMemo(
     () =>
       typeof hours === "number"
         ? hours
-        : usersList.reduce((acc, u) => acc + Number(u.hours || 0), 0),
+        : usersList.reduce((acc, u) => acc + (u.hours || 0), 0),
     [hours, usersList]
+  );
+
+  const totalDailyHours = useMemo(
+    () =>
+      typeof daily_hours === "number"
+        ? daily_hours
+        : usersList.reduce((acc, u) => acc + (u.daily_hours || 0), 0),
+    [daily_hours, usersList]
   );
 
   return (
@@ -40,7 +64,6 @@ export default function ActivityItem({
         className="w-full flex items-center justify-between px-4 py-3"
       >
         <div className="flex items-center gap-3">
-          {/* left blue icon (triangular play inside rounded box) */}
           <span className="activity-icon">
             <img
               src={triangle}
@@ -53,14 +76,16 @@ export default function ActivityItem({
           </span>
         </div>
 
-        <span className="text-[19px] font-bold text-gray-700">{total} H</span>
+        <span className="text-[19px] font-bold text-gray-700">
+          {totalHours} H{totalDailyHours > 0 && ` + ${totalDailyHours} H`}
+        </span>
       </button>
 
-      {/* Collapsible users */}
+      {/* Collapsible user list */}
       {open && (
         <div className="user_List_acitivity">
           <hr className="border-gray-200 mb-3" />
-          <ul className="space-y-500">
+          <ul className="space-y-2">
             {usersList.map((u, i) => (
               <li
                 key={`${u.name}-${i}`}
@@ -70,7 +95,7 @@ export default function ActivityItem({
                   {u.name}
                 </span>
                 <span className="text-[19px] font-medium text-gray-900">
-                  {u.hours} H
+                  {u.hours} H{u.daily_hours > 0 && ` + ${u.daily_hours} H`}
                 </span>
               </li>
             ))}

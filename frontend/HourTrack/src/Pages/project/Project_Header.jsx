@@ -34,6 +34,7 @@ export default function ProjectHeader() {
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
+
         // accept either an object or a 1-element array
         setInfo(Array.isArray(json) ? json[0] : json);
       } catch (e) {
