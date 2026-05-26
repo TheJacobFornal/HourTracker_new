@@ -3,10 +3,51 @@ import { API_ENDPOINTS } from "../../config/api";
 import confetti from "canvas-confetti";
 import SkolimImg from "../../assets/skolim.png";
 
-function fireConfetti() {
+const THEMES = {
+  light: {
+    bg: "#f9f9fb",
+    title: "#0f172a",
+    subtitle: "#007aff",
+    label: "#6b7280",
+    selectBg: "#f9f9fb",
+    selectBorder: "#e5e5ea",
+    selectColor: "#222",
+    selectOption: "#fff",
+    divider: "#e5e5ea",
+    activityChecked: "#9FA0A0",
+    activityUnchecked: "#222",
+    toggleText: "🌸 Pink",
+    btnBg: "linear-gradient(135deg, #007aff, #0056d6)",
+    btnColor: "#fff",
+    btnDisabled: "#e5e5ea",
+    btnDisabledColor: "#b0b0b0",
+  },
+  pink: {
+    bg: "linear-gradient(160deg, #ff6eb4 0%, #ff1f8e 35%, #c2006b 70%, #7a003f 100%)",
+    title: "#fff",
+    subtitle: "rgba(255,255,255,0.8)",
+    label: "rgba(255,255,255,0.75)",
+    selectBg: "rgba(255,255,255,0.15)",
+    selectBorder: "rgba(255,255,255,0.3)",
+    selectColor: "#fff",
+    selectOption: "#c2006b",
+    divider: "rgba(255,255,255,0.2)",
+    activityChecked: "#FFD9F8",
+    activityUnchecked: "#fff",
+    toggleText: "💙 Light",
+    btnBg: "linear-gradient(135deg, #fff 0%, #ffd6ec 100%)",
+    btnColor: "#c2006b",
+    btnDisabled: "rgba(255,255,255,0.1)",
+    btnDisabledColor: "rgba(255,255,255,0.3)",
+  },
+};
+
+function fireConfetti(theme = "pink") {
   const duration = 3000;
   const end = Date.now() + duration;
-  const colors = ["#ff2d78", "#ff6eb4", "#fff", "#ffd6ec", "#c2006b"];
+  const colors = theme === "light"
+    ? ["#007aff", "#0056d6", "#60a5fa", "#fff", "#e0f0ff"]
+    : ["#ff2d78", "#ff6eb4", "#fff", "#ffd6ec", "#c2006b"];
 
   (function frame() {
     confetti({
@@ -50,31 +91,32 @@ const MONTHS = [
 const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 10 }, (_, i) => currentYear - i);
 
-const labelStyle = {
+const makeLabelStyle = (t) => ({
   fontSize: "12px",
   fontWeight: "700",
   letterSpacing: "3px",
   textTransform: "uppercase",
-  color: "rgba(255,255,255,0.75)",
+  color: t.label,
   display: "block",
   marginBottom: "8px",
-};
+});
 
-const selectStyle = {
-  background: "rgba(255,255,255,0.15)",
-  border: "1px solid rgba(255,255,255,0.3)",
+const makeSelectStyle = (t) => ({
+  background: t.selectBg,
+  border: `1px solid ${t.selectBorder}`,
   borderRadius: "10px",
-  color: "#fff",
+  color: t.selectColor,
   padding: "11px 16px",
   fontSize: "16px",
   fontWeight: "600",
   outline: "none",
   cursor: "pointer",
   width: "100%",
-};
+  transition: "all 0.3s ease",
+});
 
 export default function Zestawienie() {
-  const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const [month, setMonth] = useState(null);
   const [year, setYear] = useState(currentYear);
   const [activities, setActivities] = useState([]);
   const [checked, setChecked] = useState({});
@@ -82,8 +124,11 @@ export default function Zestawienie() {
   const [exporting, setExporting] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
   const [skolimHiding, setSkolimHiding] = useState(false);
+  const [themeName, setThemeName] = useState("light");
+  const t = THEMES[themeName];
 
   useEffect(() => {
+    if (!month) { setActivities([]); return; }
     const ac = new AbortController();
     setLoading(true);
     fetch(API_ENDPOINTS.activitiesByMonth, {
@@ -115,7 +160,7 @@ export default function Zestawienie() {
     setExporting(true);
     try {
       await downloadExcel(month, year, selectedIds);
-      fireConfetti();
+      fireConfetti(themeName);
       setCelebrate(true);
       setSkolimHiding(false);
       setTimeout(() => setSkolimHiding(true), 4400);
@@ -127,13 +172,15 @@ export default function Zestawienie() {
 
   // -30px compensates for the 60px sidebar to hit true screen center.
   // When activities are shown, shift content an additional 80px left.
+  const monthChosen = month !== null;
   const screenCenter = "translateX(-30px)";
   const contentShift = hasActivities ? "translateX(-110px)" : "translateX(-30px)";
 
   return (
     <div style={{
       minHeight: "100vh",
-      background: "linear-gradient(160deg, #ff6eb4 0%, #ff1f8e 35%, #c2006b 70%, #7a003f 100%)",
+      background: t.bg,
+      transition: "background 0.5s ease",
       fontFamily: "'Segoe UI', sans-serif",
       display: "flex",
       flexDirection: "column",
@@ -159,8 +206,8 @@ export default function Zestawienie() {
           fontWeight: "900",
           textTransform: "uppercase",
           letterSpacing: "4px",
-          color: "#fff",
-          textShadow: "0 0 20px rgba(255,255,255,0.4)",
+          color: t.title,
+          textShadow: themeName === "light" ? "none" : "0 0 20px rgba(255,255,255,0.4)",
           margin: "0 0 6px 0",
           lineHeight: 1.15,
         }}>
@@ -171,7 +218,7 @@ export default function Zestawienie() {
           fontWeight: "400",
           letterSpacing: "6px",
           textTransform: "uppercase",
-          color: "rgba(255,255,255,0.8)",
+          color: t.subtitle,
           margin: "0 0 14px 0",
           fontStyle: "italic",
         }}>
@@ -186,31 +233,37 @@ export default function Zestawienie() {
 
       {/* Content — centered when no activities, slightly left when loaded */}
       <div style={{
-        transform: contentShift,
+        transform: !monthChosen ? screenCenter : contentShift,
         transition: "transform 0.4s ease",
         display: "flex",
         gap: "60px",
         alignItems: "flex-start",
         maxWidth: "900px",
         width: "100%",
+        justifyContent: !monthChosen ? "center" : "flex-start",
       }}>
 
         {/* LEFT — selectors */}
         <div style={{ flex: "0 0 200px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             <div>
-              <label style={labelStyle}>Miesiąc</label>
-              <select value={month} onChange={(e) => setMonth(Number(e.target.value))} style={selectStyle}>
+              <label style={makeLabelStyle(t)}>Miesiąc</label>
+              <select
+                value={month ?? ""}
+                onChange={(e) => setMonth(e.target.value ? Number(e.target.value) : null)}
+                style={makeSelectStyle(t)}
+              >
+                <option value="" disabled style={{ background: t.selectOption }}>-- Wybierz miesiąc --</option>
                 {MONTHS.map((n, i) => (
-                  <option key={i + 1} value={i + 1} style={{ background: "#c2006b" }}>{n}</option>
+                  <option key={i + 1} value={i + 1} style={{ background: t.selectOption }}>{n}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label style={labelStyle}>Rok</label>
-              <select value={year} onChange={(e) => setYear(Number(e.target.value))} style={selectStyle}>
+              <label style={makeLabelStyle(t)}>Rok</label>
+              <select value={year} onChange={(e) => setYear(Number(e.target.value))} style={makeSelectStyle(t)}>
                 {YEARS.map((y) => (
-                  <option key={y} value={y} style={{ background: "#c2006b" }}>{y}</option>
+                  <option key={y} value={y} style={{ background: t.selectOption }}>{y}</option>
                 ))}
               </select>
             </div>
@@ -219,14 +272,14 @@ export default function Zestawienie() {
 
         {/* Divider — only when activities present */}
         {hasActivities && (
-          <div style={{ width: "1px", alignSelf: "stretch", background: "rgba(255,255,255,0.2)", flexShrink: 0 }} />
+          <div style={{ width: "1px", alignSelf: "stretch", background: t.divider, flexShrink: 0 }} />
         )}
 
         {/* RIGHT — activities */}
         {hasActivities && (
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-              <span style={labelStyle}>Wszystkie aktywności</span>
+              <span style={makeLabelStyle(t)}>Wszystkie aktywności</span>
               <button onClick={() => toggleAll(!allChecked)} style={{
                 background: "none", border: "none",
                 color: "rgba(255,255,255,0.6)", fontSize: "11px",
@@ -250,7 +303,7 @@ export default function Zestawienie() {
                     style={{ accentColor: "#fff", width: "16px", height: "16px", flexShrink: 0 }}
                   />
                   <span style={{
-                    color: checked[a.id] ? "#FFD9F8" : "#fff",
+                    color: checked[a.id] ? t.activityChecked : t.activityUnchecked,
                     fontSize: "15px", fontWeight: "500",
                     transition: "color 0.2s",
                     whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
@@ -269,10 +322,10 @@ export default function Zestawienie() {
           </div>
         )}
 
-        {/* Loading / empty state */}
-        {!hasActivities && (
+        {/* Loading / empty state — only show when month is chosen */}
+        {!hasActivities && monthChosen && (
           <div style={{ display: "flex", alignItems: "center" }}>
-            <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "15px", fontStyle: "italic", margin: 0 }}>
+            <p style={{ color: t.label, fontSize: "15px", fontStyle: "italic", margin: 0 }}>
               {loading ? "Ładowanie..." : "Brak aktywności w tym okresie."}
             </p>
           </div>
@@ -286,12 +339,10 @@ export default function Zestawienie() {
           disabled={!canExport}
           style={{
             padding: "14px 56px",
-            background: canExport
-              ? "linear-gradient(135deg, #fff 0%, #ffd6ec 100%)"
-              : "rgba(255,255,255,0.1)",
+            background: canExport ? t.btnBg : t.btnDisabled,
             border: "none",
             borderRadius: "50px",
-            color: canExport ? "#c2006b" : "rgba(255,255,255,0.3)",
+            color: canExport ? t.btnColor : t.btnDisabledColor,
             fontSize: "15px",
             fontWeight: "800",
             letterSpacing: "3px",
@@ -305,7 +356,33 @@ export default function Zestawienie() {
         </button>
       </div>
 
-      {celebrate && (
+      {/* Theme toggle button */}
+      <button
+        onClick={() => setThemeName(n => n === "light" ? "pink" : "light")}
+        style={{
+          position: "fixed",
+          bottom: "24px",
+          right: "24px",
+          padding: "8px 14px",
+          borderRadius: "50px",
+          border: "1px solid rgba(255,255,255,0.25)",
+          background: themeName === "light" ? "#fff" : "rgba(0,0,0,0.25)",
+          backdropFilter: "blur(10px)",
+          boxShadow: themeName === "light" ? "0 1px 4px rgba(0,0,0,0.1)" : "none",
+          color: themeName === "light" ? "#374151" : "#fff",
+          border: themeName === "light" ? "1px solid #e5e5ea" : "1px solid rgba(255,255,255,0.25)",
+          fontSize: "12px",
+          fontWeight: "600",
+          cursor: "pointer",
+          zIndex: 1000,
+          letterSpacing: "1px",
+          transition: "all 0.2s ease",
+        }}
+      >
+        {t.toggleText}
+      </button>
+
+      {celebrate && themeName === "pink" && (
         <div style={{
           position: "fixed",
           bottom: 0,

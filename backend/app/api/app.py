@@ -239,10 +239,13 @@ def zestawienie_export_excel(payload: dict):
     year = payload.get("year")
     activity_ids = payload.get("activity_ids", [])
     if not month or not year or not activity_ids:
-        raise HTTPException(status_code=400, detail="Missing month, year or activity_ids")
+        raise HTTPException(
+            status_code=400, detail="Missing month, year or activity_ids"
+        )
 
     from app.scripts.Export_Excel.Export_Zestawienie import generate
     import datetime
+
     stream = generate(month, year, activity_ids)
     month_str = datetime.date(year, month, 1).strftime("%Y-%m")
     filename = f"Zestawienie_{month_str}.xlsx"
