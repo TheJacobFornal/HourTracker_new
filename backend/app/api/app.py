@@ -195,6 +195,64 @@ def version():
     return {"version": version, "data_realse": data_realse}
 
 
+@app.post("/api/activities/by_month")
+def activities_by_month(payload: dict, db: Session = Depends(get_db)):
+    month = payload.get("month")
+    year = payload.get("year")
+    if not month or not year:
+        raise HTTPException(status_code=400, detail="Missing month or year")
+
+    import datetime
+    from app.models.activity import Activity
+
+    date_from = datetime.date(year, month, 1)
+    # exclusive upper bound — same as SQL: log_date < first day of next month
+    if month == 12:
+        date_to_excl = datetime.date(year + 1, 1, 1)
+    else:
+        date_to_excl = datetime.date(year, month + 1, 1)
+
+    rows = (
+        db.query(
+            Activity.id,
+            Activity.name,
+            Activity.description,
+            Activity.team_id,
+        )
+        .join(TimeLog, TimeLog.activity_id == Activity.id)
+        .filter(TimeLog.log_date >= date_from, TimeLog.log_date < date_to_excl)
+        .distinct()
+        .order_by(Activity.name)
+        .all()
+    )
+
+    activities = [
+        {"id": r.id, "name": r.name, "description": r.description, "team_id": r.team_id}
+        for r in rows
+    ]
+    return {"activities": activities}
+
+
+@app.post("/api/zestawienie/export_excel")
+def zestawienie_export_excel(payload: dict):
+    month = payload.get("month")
+    year = payload.get("year")
+    activity_ids = payload.get("activity_ids", [])
+    if not month or not year or not activity_ids:
+        raise HTTPException(status_code=400, detail="Missing month, year or activity_ids")
+
+    from app.scripts.Export_Excel.Export_Zestawienie import generate
+    import datetime
+    stream = generate(month, year, activity_ids)
+    month_str = datetime.date(year, month, 1).strftime("%Y-%m")
+    filename = f"Zestawienie_{month_str}.xlsx"
+    return StreamingResponse(
+        stream,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
 @app.get("/get/leaders")
 def get_leaders():
     print("Received request for leaders", flush=True)
@@ -203,5 +261,5 @@ def get_leaders():
 
 
 if __name__ == "__main__":
-    # uvicorn.run(app, host="127.0.0.1", port=8000)
-    uvicorn.run(app, host="10.1.69.13", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)
+    # uvicorn.run(app, host="10.1.69.13", port=8000)

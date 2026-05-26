@@ -21,6 +21,8 @@ export const API_ENDPOINTS = {
   projectsSearch: `${API_BASE_URL}/api/projects/search`,
   leaders: `${API_BASE_URL}/get/leaders`,
   exportExcel: `${API_BASE_URL}/api/project/export_excel`,
+  activitiesByMonth: `${API_BASE_URL}/api/activities/by_month`,
+  zestawienieExport: `${API_BASE_URL}/api/zestawienie/export_excel`,
 };
 
 export { API_BASE_URL };
